@@ -4,3 +4,5 @@ tailwind.config.js
 package-lock.json
 .vscode
 dev.bat
+
+# git rm --cached .vscode
