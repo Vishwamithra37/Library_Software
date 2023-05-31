@@ -39,7 +39,7 @@ class inserts:
         False -- if the user could not be registered (Boolean)
         True -- if the user was registered successfully (Boolean)
         """
-        dac = dab["users"]
+        dac = dab["USERS"]
         v0 = dac.find_one({"email": useremail})
         if v0:
             return False
@@ -58,7 +58,7 @@ class inserts:
         token -- if the token was created successfully (String and Encrypted)
         """
         
-        dac = dab["sessions"]
+        dac = dab["SESSIONS"]
         v1 = dac.insert_one(user_Object)
         if v1.acknowledged:
             return enco(str(v1.inserted_id))
@@ -75,7 +75,7 @@ class getters:
         user -- if the credentials are valid (Dictionary)
         """
 
-        dac = dab["users"]
+        dac = dab["USERS"]
         v1 = dac.find_one(user_Object)
         if v1:
             return v1
@@ -91,7 +91,7 @@ class getters:
         session -- if the token is valid (Dictionary)
         """
         
-        dac = dab["sessions"]
+        dac = dab["SESSIONS"]
         v1 = dac.find_one({"_id":ObjectId(deco(token))})
         if v1:
             return v1
