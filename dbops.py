@@ -30,7 +30,7 @@ def deco(secode: str):
 
 
 class inserts:
-    def register_new_user(user_Object: dict):
+    def register_new_user(user_Object: dict, useremail: str):
         """Returns True if the user was registered successfully
 
         Keyword arguments:
@@ -40,6 +40,9 @@ class inserts:
         True -- if the user was registered successfully (Boolean)
         """
         dac = dab["users"]
+        v0 = dac.find_one({"email": useremail})
+        if v0:
+            return False
         v1 = dac.insert_one(user_Object)
         if v1.acknowledged:
             return True
