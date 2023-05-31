@@ -2,3 +2,5 @@ apples
 node_modules
 tailwind.config.js
 package-lock.json
+.vscode
+dev.bat
