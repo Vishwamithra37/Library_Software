@@ -15,6 +15,7 @@ def test_register():
         username: testuser
         password: testpassword
         email: tester@gmail.com
+        id_number : 123456789
         Current  Endpoint: /api/v1/user/register
         Success Response: {'status': 'success'} , 200
         Failure Response: {'status': 'error', 'message': 'Username already exists'} , 400
@@ -24,7 +25,7 @@ def test_register():
              "TestFunction":"test_register",
              "TestUrl":BASEURL+"/api/v1/user/register",
              "TestType":"POST",
-             "TestData":  {'username': 'testuser', 'password': 'testpassword', 'email': 'tester@gmail.com'},
+             "TestData":  {'username': 'testuser', 'password': 'testpassword', 'email': 'tester@gmail.com', 'id_number': '123456789'},
              "TestExpectedResponse":{'status': 'success', 'SatusCode':200} ,
         }
         url = test_data["TestUrl"]

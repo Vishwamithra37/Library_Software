@@ -1,0 +1,11 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.python"
+    },
+    "python.formatting.provider": "none",
+    "latex-workshop.bibtex-format.sortby": [
+        "key",
+        "type"
+    ],
+    "explorer.sortOrder": "type"
+}
