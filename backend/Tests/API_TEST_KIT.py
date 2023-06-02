@@ -1,5 +1,6 @@
 import config
 import requests
+from pprint import pprint as print
 dab = config.DB[config.DATABASE]
 BASEURL= config.BASEURL
 TEST_ARRAY=[]
@@ -75,6 +76,7 @@ def test_login():
             test_data["TestActualResponse"] = r.json()
             test_data["TestStatus"] = "Failed"
             TEST_ARRAY.append(test_data)
+            print(TEST_ARRAY)
             print("Login Failed")
             raise Exception("Login Failed")
         return r.json()
@@ -87,17 +89,28 @@ class deleters:
         dac=dab["USERS"]
         dac.delete_one({"email": "tester@gmail.com"})
 
+     def delete_test_sessions():
+          dac=dab["SESSIONS"]
+          dac.delete_one({"email": "tester@gmail.com"}) 
+
 
 # Testing registration endpoint.
 class TestKits:
     def registration_kit():
+        print("Registration Kit")
         test_register()
         deleters.delete_test_users()
-        print(TEST_ARRAY)
     def registration_and_login_kit():
+        print("Registration and Login Kit")
         test_register()
         test_login()
         deleters.delete_test_users()
-        print(TEST_ARRAY)    
+        deleters.delete_test_sessions()
+    
 
 
+# Testing Kits
+
+TestKits.registration_kit()
+TestKits.registration_and_login_kit()
+print(TEST_ARRAY)

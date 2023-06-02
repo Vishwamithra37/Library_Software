@@ -2,8 +2,7 @@ import config
 import datetime
 from bson.objectid import ObjectId
 import easycrypt
-import json
-import copy
+import cryptography
 import time
 
 
@@ -27,6 +26,12 @@ def deco(secode: str):
     fkey3 = easycrypt.decrypt(secode, key2)
     # print(fkey3)
     return fkey3
+
+def hash512(sstr: str):
+    hasher=cryptography.hazmat.primitives.hashes.Hash(cryptography.hazmat.primitives.hashes.SHA512())
+    hasher.update(sstr.encode('utf-8'))
+    return hasher.finalize().hex()
+
 
 
 class inserts:

@@ -1,7 +1,13 @@
 import flask
 import dbops
 import config
+
+
+
 app = flask.Flask(__name__)
+app.secret_key = config.SESSION_ENCRYPTING_KEY
+
+
 
 
 @app.route('/')
@@ -23,7 +29,7 @@ def register():
     if 50<len(Flask_JSON['id_number']) < 2: return {'status': 'error', 'message': 'ID Number too short'}, 400
     ################## End Validation #################
     Flask_JSON["Role"]="Student"
-    Flask_JSON["password"]=dbops.enco(Flask_JSON["password"])
+    Flask_JSON["password"]=dbops.hash512(Flask_JSON["password"])
     Flask_JSON["permissions"]=[]
     Flask_JSON["Library"]={}
     Flask_JSON["Library"]["Number_of_books_rented_currently"]=0
@@ -34,7 +40,7 @@ def register():
     Flask_JSON["Library"]["Total_fine_amount_paid"]=0
     Flask_JSON["Library"]["Total_fine_amount_pending"]=0
     Flask_JSON["Library"]["Total_fine_amount_waived"]=0
-    step1= dbops.inserts.register_new_user(Flask_JSON)
+    step1= dbops.inserts.register_new_user(Flask_JSON, Flask_JSON["email"])
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Username already exists'}, 400
@@ -51,7 +57,7 @@ def login():
     if not '@' in Flask_JSON['email']: return {'status': 'error', 'message': 'Invalid email'}, 400
     if not '.' in Flask_JSON['email']: return {'status': 'error', 'message': 'Invalid email'}, 400
     ################## End Validation #################
-    Flask_JSON["password"]=dbops.enco(Flask_JSON["password"])
+    Flask_JSON["password"]=dbops.hash512(Flask_JSON["password"])
     step1= dbops.getters.get_user_by_credentials(Flask_JSON)
     if step1:
         del step1["_id"]

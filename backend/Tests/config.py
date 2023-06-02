@@ -6,3 +6,4 @@ DBOPSENCODINGSTRING = "I am a scary random string"
 SERVERTIMEOUT=2000
 BASEURL="http://localhost:80"
 DB=MongoClient(DBLINK,port=DBPORT,serverSelectionTimeoutMS=SERVERTIMEOUT)
+SESSION_ENCRYPTING_KEY="I am a scary random string22"
