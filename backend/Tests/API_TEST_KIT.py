@@ -190,7 +190,7 @@ class TestKits:
         if not verifiers.verify_test_book_registration(): raise Exception("Book Registration Failed")
         deleters.delete_test_users()
         deleters.delete_test_sessions()
-        # deleters.delete_test_books()    
+        deleters.delete_test_books()    
     
 
 
