@@ -30,7 +30,7 @@ def register():
     ################## End Validation #################
     Flask_JSON["Role"]="Student"
     Flask_JSON["password"]=dbops.hash512(Flask_JSON["password"])
-    Flask_JSON["permissions"]=[]
+    Flask_JSON["permissions"]=['register_book']
     Flask_JSON["Library"]={}
     Flask_JSON["Library"]["Number_of_books_rented_currently"]=0
     Flask_JSON["Library"]["Number_of_books_returned"]=0
@@ -88,14 +88,13 @@ def register_book():
     if 200<len(Flask_JSON['genre']) < 2: return {'status': 'error', 'message': 'Genre too short'}, 400
     if 400<len(Flask_JSON['description']) < 2: return {'status': 'error', 'message': 'Description too short'}, 400
     if 200<len(Flask_JSON['tags']) < 1: return {'status': 'error', 'message': 'At least 1 tag required'}, 400
-    if int(Flask_JSON['noofcopies']) < 1: return {'status': 'error', 'message': 'At least 1 copy required'}, 400
-    if Flask_JSON['noofcopies'].isdigit(): return {'status': 'error', 'message': 'Invalid noofcopies'}, 400
+    if int(Flask_JSON['noofcopies']) <1 : return {'status': 'error', 'message': 'At least 1 copy required'}, 400
     ################## End Validation #################
     Flask_JSON["status"]="Available"
     Flask_JSON["noofcopies_available_currently"]=int(Flask_JSON["noofcopies"])
     Flask_JSON["noofcopies_rented_currently"]=0
     Flask_JSON["nooftimes_rented"]=0
-    Flask_JSON["tags"]=Flask_JSON["tags"].split(",")
+    Flask_JSON["tags"]=Flask_JSON["tags"]
     step1= dbops.inserts.register_book(Flask_JSON)
     if step1:
         return {'status': 'success'}, 200
