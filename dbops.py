@@ -7,8 +7,6 @@ import cryptography
 
 import additional_functions
 
-
-
 dab = config.DB[config.DATABASE]
 
 

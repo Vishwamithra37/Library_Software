@@ -196,7 +196,7 @@ class TestKits:
 
 # Testing Kits
 
-# TestKits.registration_kit()
+TestKits.registration_kit()
 # TestKits.registration_and_login_kit()
-TestKits.reg_and_log_and_book_reg_kit()
+# TestKits.reg_and_log_and_book_reg_kit()
 print(TEST_ARRAY)

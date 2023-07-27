@@ -8,12 +8,33 @@ app = flask.Flask(__name__)
 app.secret_key = config.SESSION_ENCRYPTING_KEY
 
 
-
-
-@app.route('/')
+@app.route('/login')
 def index():
-    return flask.render_template('home.html')
+    return flask.render_template('login.html')
 
+@app.route('/register')
+def register2():
+    pass
+
+@app.route('/login')
+def login2():
+    pass
+
+@app.route('/dashboard')
+def dashboard():
+    pass
+
+@app.route('/profile')
+def profile():
+    pass
+
+@app.route('/books')
+def books():
+    pass
+
+# Genric frontend #
+
+####################### User Endpoints ############################
 @app.route('/api/v1/user/register', methods=['POST'])
 def register():
     Flask_JSON = flask.request.get_json()
@@ -30,7 +51,7 @@ def register():
     ################## End Validation #################
     Flask_JSON["Role"]="Student"
     Flask_JSON["password"]=dbops.hash512(Flask_JSON["password"])
-    Flask_JSON["permissions"]=['register_book']
+    Flask_JSON["permissions"]=config.PERMISSION_LIST
     Flask_JSON["Library"]={}
     Flask_JSON["Library"]["Number_of_books_rented_currently"]=0
     Flask_JSON["Library"]["Number_of_books_returned"]=0
@@ -61,6 +82,7 @@ def login():
     step1= dbops.getters.get_user_by_credentials(Flask_JSON)
     if step1:
         del step1["_id"]
+        if "login" not in step1["permissions"]: return {'status': 'error', 'message': 'You do not have permission to login'}, 400
         step2=dbops.inserts.create_session_token(step1)
         if step2:
             r1=dbops.enco(str(step1["_id"]))
@@ -90,9 +112,6 @@ def get_user_list():
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No users found'}, 400
-
-
-
 
 ####################### Admin Endpoints ############################
 @app.route('/api/v1/admin/books/register', methods=['POST'])
