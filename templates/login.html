@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-
+    <script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/GENERIC_UTILS.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/login_page.js') }}"></script>
 </head>
 
 <body class="bg-cover bg-center flex flex-col items-center justify-center min-h-screen"
@@ -15,20 +17,21 @@
         <div class="bg-blue-500 text-white py-2 px-4 rounded-t mb-0 text-center">
             <h1>Galam Technologies Library Software</h1>
         </div>
-        <form class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 dark:bg-gray-800">
+        <form class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 dark:bg-gray-800" id="login_form" method="POST"
+            action="{{ url_for('login') }}">
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2 dark:text-white" for="email">
                     Email
                 </label>
                 <input
                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:text-white"
-                    id="email" type="text" placeholder="Email">
+                    id="email" type="text" placeholder="Email" name="email" required>
             </div>
             <div class="mb-6">
                 <label class="block text-gray-700 text-sm font-bold mb-2 dark:text-white" for="password">
                     Password
                 </label>
-                <input
+                <input name="password" maxlength="20" minlength="3" required
                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:text-white"
                     id="password" type="password" placeholder="******************">
                 <p class="text-blue-500 text-xs italic cursor-pointer hover:text-blue-600 hover:font-semibold"
@@ -39,7 +42,7 @@
             <div class="flex items-center justify-between">
                 <button
                     class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    type="button">
+                    type="button" id="submit_login_form">
                     Sign In
                 </button>
             </div>

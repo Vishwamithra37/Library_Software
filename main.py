@@ -22,7 +22,7 @@ def login2():
 
 @app.route('/dashboard')
 def dashboard():
-    pass
+    return flask.render_template('dashboard.html')
 
 @app.route('/profile')
 def profile():
@@ -208,4 +208,4 @@ def get_book_list():
 
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=80, debug=True)
+    app.run(host='0.0.0.0', port=config.RUNNINGPORT, debug=True)
