@@ -45,7 +45,7 @@ class GENERIC_APICALLS {
 
 }
 class GENERIC_META_CALL {
-    Generic_Button(classer, text) {
+    Generic_button(classer, text) {
         let button = document.createElement("button");
         $(button).addClass(classer);
         $(button).text(text);
@@ -56,6 +56,12 @@ class GENERIC_META_CALL {
         $(div).addClass(classer);
         $(div).text(text);
         return div;
+    }
+    Generic_label(classer, text) {
+        let label = document.createElement("label");
+        $(label).addClass(classer);
+        $(label).text(text);
+        return label;
     }
     Generic_input(classer, placeholder, value) {
         let input = document.createElement("input");
@@ -237,9 +243,9 @@ class GENERIC_META_FLOATING_DIVS {
     multi_col_stack_floater(stacks) {
         // Options is an array of Elements. Each specifying the content of each column.
         let wrapperdiv = document.createElement('div');
-        $(wrapperdiv).addClass('fixed z-40 w-full h-full top-0 flex justify-center items-center bg-black bg-opacity-50 border-gray-700');
+        $(wrapperdiv).addClass('fixed z-40 w-full h-full  top-0 flex justify-center items-center bg-white dark:bg-black bg-opacity-50 border-gray-700 shadow-lg');
         let wrapper_2 = document.createElement('div');
-        $(wrapper_2).addClass('flex flex-col w-full   md:w-2/6 h-5/6 bg-gray-900 rounded-lg bg-black shadow-lg p-2 border-0 border-gray-200');
+        $(wrapper_2).addClass('flex flex-col w-full   md:w-2/6 h-5/6 bg-gray-900 bg-white shadow-lg p-2 border border-black border-gray-200 dark:bg-gray-900 shadow-lg rounded-lg');
         let len_of_options = stacks.length;
         for (let i = 0; i <= len_of_options; i++) {
             $(wrapper_2).append(stacks[i]);
