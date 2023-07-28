@@ -132,6 +132,7 @@ def register_book():
     if 200<len(Flask_JSON['genre']) < 2: return {'status': 'error', 'message': 'Genre too short'}, 400
     if 400<len(Flask_JSON['description']) < 2: return {'status': 'error', 'message': 'Description too short'}, 400
     if 200<len(Flask_JSON['tags']) < 1: return {'status': 'error', 'message': 'At least 1 tag required'}, 400
+    if type(Flask_JSON['tags'])!=str: return {'status': 'error', 'message': 'Tags must be a string'}, 400
     if int(Flask_JSON['noofcopies']) <1 : return {'status': 'error', 'message': 'At least 1 copy required'}, 400
     ################## End Validation #################
     Flask_JSON["status"]="Available"  # Book status changes between Available and Rented . This is the default status.
@@ -139,7 +140,24 @@ def register_book():
     Flask_JSON["noofcopies_rented_currently"]=0 # This is the number of copies currently rented.
     Flask_JSON["nooftimes_rented"]=0 # This is the number of times the book has been rented. Purely for statistics.
     Flask_JSON["tags"]=Flask_JSON["tags"] # This is a list of tags for the book. This is used for searching.
+    check_if_same_book_exists=dbops.getters.get_book_by_parameter("title",Flask_JSON["title"])
+    if check_if_same_book_exists: return {'status': 'error', 'message': 'Book already exists'}, 400
+    if Flask_JSON["isbn"]!="000": 
+        check_if_same_book_exists=dbops.getters.get_book_by_parameter("isbn",Flask_JSON["isbn"])
+        if check_if_same_book_exists: return {'status': 'error', 'message': 'Book already exists'}, 400   
+
+    Flask_JSON["tags"]=Flask_JSON["tags"].split(",")
+    Flask_JSON["tags"]=[item.strip() for item in Flask_JSON["tags"]]
+
     step1= dbops.inserts.register_book(Flask_JSON)
+    to_add_into_configs={
+        # "title":Flask_JSON["title"],
+        # "author":Flask_JSON["author"],
+        # "isbn":Flask_JSON["isbn"],
+        "genre":[Flask_JSON["genre"]],
+        "tags":Flask_JSON["tags"]
+    }
+    step2= dbops.inserts.add_unique_tags_to_config(to_add_into_configs)
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Internal error'}, 500
@@ -184,6 +202,21 @@ def get_specific_user_details_with_books_rented():
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No users found'}, 400
 
+
+@app.route('/api/v1/admin/get_book_tags', methods=['GET'])
+def get_book_tags():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error', 'message': 'Invalid token'}, 400
+    if not "get_book_tags" in UserDetails["permissions"]:
+        return {'status': 'error', 'message': 'You do not have permission to get book tags'}, 400
+    book_tag_parameter=flask.request.args.get('book_tag_parameter')
+    if not book_tag_parameter: return {'status': 'error', 'message': 'Book tag parameter not provided'}, 400
+    if not book_tag_parameter in ["genre","tags"]: return {'status': 'error', 'message': 'Invalid book tag parameter'}, 400
+    book_tag_parameters=dbops.getters.get_book_tags(book_tag_parameter)
+    if book_tag_parameters:
+        return {'status': 'success', 'options': book_tag_parameters}, 200
+    return {'status': 'success', 'options': []}, 200
 
 #################### End Admin Endpoints ##########################
 

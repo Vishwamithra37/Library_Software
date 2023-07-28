@@ -132,6 +132,22 @@ class inserts:
             return True
         return False
     
+    def add_unique_tags_to_config(all_new_book_parameters:dict):
+        """Returns True if the tags were added successfully
+
+        Keyword arguments:
+        all_new_book_parameters -- a dictionary containing the new tags
+        Returns:
+        False -- if the tags could not be added (Boolean)
+        True -- if the tags were added successfully (Boolean)
+        """
+        dac = dab["CONFIGS"]
+        for i in all_new_book_parameters:
+            v1 = dac.update_one({"Config_Name":"Book_Tag_Options"},{"$addToSet":{i:{'$each':all_new_book_parameters[i]}}})
+            if not v1.acknowledged:
+                return False
+        return True
+    
 class getters:
 
     def get_user_by_credentials(user_Object: dict):
@@ -187,6 +203,50 @@ class getters:
             return all_books_list
         return False
     
+    def get_book_by_parameter(book_parameter:str,book_parameter_value:str):
+        """ Returns the book object if the book_name is valid
+        
+        Keyword arguments:
+        book_name -- the book name (String)
+        Returns:
+        False -- if the book_name is invalid (Boolean)
+        book -- if the book_name is valid (Dictionary)
+        """
+        dac = dab["BOOKS"]
+        v1 = dac.find_one({book_parameter:book_parameter_value},{"_id":0})
+        if v1:
+            return v1
+        return False
+    
+    def get_all_book_tags():
+        """ Returns a list of all book tags
+        
+        Returns:
+        False -- if the parameter_name is invalid (Boolean)
+        book_tags_list -- if the parameter_name is valid (list of dictionaries)
+        """
+        dac = dab["CONFIGS"]
+        v1 = dac.find_one({"Config_Name":"Book_Tag_Options"},{"_id":0})
+        if v1:
+            return v1
+        return False
+    
+    def get_book_tags(parameter_name:str):
+        """ Returns a list of book tags
+        
+        Keyword arguments:
+        parameter_name -- the parameter name (String)
+        Returns:
+        False -- if the parameter_name is invalid (Boolean)
+        book_tags_list -- if the parameter_name is valid (list of dictionaries)
+        """
+        dac = dab["CONFIGS"]
+        v1 = dac.find_one({"Config_Name":"Book_Tag_Options"},{"_id":0, parameter_name:1})
+        print(v1)
+        if v1:
+            return v1[parameter_name]
+        return False
+
     def get_user_list(skip: int, limit: int):
         """ Returns a list of users
         
