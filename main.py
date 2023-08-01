@@ -220,18 +220,24 @@ def get_book_tags():
 
 #################### End Admin Endpoints ##########################
 
-@app.route('/api/v1/get_book_list', methods=['GET'])
+@app.route('/api/v1/get_book_list', methods=['POST'])
 def get_book_list():
     UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
     if not UserDetails:
         return {'status': 'error', 'message': 'Invalid token'}, 400
     if not "get_book_list" in UserDetails["permissions"]:
+        print(UserDetails["permissions"])
         return {'status': 'error', 'message': 'You do not have permission to get book list'}, 400
-    skip=flask.request.args.get('skip')
-    limit=flask.request.args.get('limit')
+    JSON_DATA = flask.request.get_json()
+    if JSON_DATA.keys() != {"skip","limit","special_filter"}: return {'status': 'error', 'message': 'Missing keys'}, 400
+    skip=JSON_DATA["skip"]
+    limit=JSON_DATA["limit"]
+    ##################################################################################################################SCARY BUG ALERT####################################################################################################
+    special_filter=JSON_DATA["special_filter"]
+    ##################################################################################################################SCARY BUG ALERT####################################################################################################
     if int(skip)<0: return {'status': 'error', 'message': 'Skip cannot be negative'}, 400
     if int(limit)<0: return {'status': 'error', 'message': 'Limit cannot be negative'}, 400
-    step1=dbops.getters.get_book_list()
+    step1=dbops.getters.get_book_list(skip,limit)
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No books found'}, 400

@@ -3,6 +3,10 @@ $(document).ready(function () {
         let k1 = new dashboard_page_cards().register_new_book_div();
         $('body').append(k1);
     });
+});
+
+$(document).ready(function () {
+    new dashboard_page_API_calls().refresh_book_list(10, 0, "all");
 
 });
 
@@ -253,5 +257,75 @@ class dashboard_page_cards {
             }
             return wrapper_div;
         }
+    }
+    book_row_card(book_data) {
+        //     <div class="w-full flex flex-col shadow-md border-b-2 border-gray-200">
+        //     <div class="flex flex-row justify-items-end text-black font-semibold p-2">
+        //         <span>1)<span> Higher Engineering Mathematics</span> </span>
+        //         <span class="text-base float-right ml-auto mr-2">Lend</span>
+        //         <!-- <span class="text-base float-right ml-auto mr-2">Make Unavailable</span>
+        //         <span class="text-base float-right ml-auto mr-2">Hide Book</span> -->
+        //     </div>
+        //     <div
+        //         class="w-full text-right bg-gray-200 font-semibold  hover:text-green-600 text-green-500 cursor-pointer pl-2 pr-2 rounded-b-lg">
+        //         Show Details
+        //     </div>
+        // </div>
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 border-gray-200",
+            ""
+        )
+        let primary_card_div = new GENERIC_META_CALL().Generic_div(
+            "flex flex-row justify-items-end text-black font-semibold p-2",
+            ""
+        )
+        let book_title = new GENERIC_META_CALL().Generic_span(
+            "",
+            book_data['title']
+        )
+        let lend_button = new GENERIC_META_CALL().Generic_span(
+            "text-base float-right ml-auto mr-2 text-black hover:font-bold cursor-pointer",
+            "Lend"
+        )
+
+        let show_details_button = new GENERIC_META_CALL().Generic_div(
+            "w-full text-right bg-gray-200 font-semibold  hover:text-green-600 text-green-500 cursor-pointer pl-2 pr-2 rounded-b-lg",
+            "Show Details"
+        )
+        $(primary_card_div).append(book_title);
+        $(primary_card_div).append(lend_button);
+        $(wrapper_div).append(primary_card_div);
+        $(wrapper_div).append(show_details_button);
+        $(show_details_button).click(function () {
+            // let k1 = new dashboard_page_cards().book_details_card(book_data);
+            // $('body').append(k1);
+        });
+        return wrapper_div;
+    }
+}
+class dashboard_page_API_calls {
+    refresh_book_list(limit, skip, special_filter) {
+        let url = "/api/v1/get_book_list";
+        let method = "POST";
+        let the_data = {
+            "limit": limit,
+            "skip": skip,
+            "special_filter": special_filter
+        }
+        let data = JSON.stringify(the_data);
+        let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
+            console.log(response);
+            let book_list = response['data'];
+            let book_list_len = book_list.length;
+            for (let i = 0; i < book_list_len; i++) {
+                book_list[i]['title'] = book_list[i]['title'].toUpperCase();
+                book_list[i]['title'] = i + 1 + ") " + book_list[i]['title'];
+                let k1 = new dashboard_page_cards().book_row_card(book_list[i]);
+                $('#books_box').append(k1);
+            }
+
+        }); // End of API call
+
+
     }
 }

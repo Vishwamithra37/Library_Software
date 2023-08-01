@@ -127,6 +127,7 @@ class inserts:
         True -- if the book was registered successfully (Boolean)
         """
         dac = dab["BOOKS"]
+        book_Object["timestamp"]=str(datetime.datetime.utcnow())
         v1 = dac.insert_one(book_Object)
         if v1.acknowledged:
             return True
@@ -184,9 +185,8 @@ class getters:
             return v1
         return False
     
-    def get_book_list(skip: int, limit: int):
+    def get_book_list(skip: int=0, limit: int=0):
         """ Returns a list of books
-        
         Keyword arguments:
         skip -- the number of books to skip (Integer)
         limit -- the number of books to return (Integer)
@@ -205,7 +205,6 @@ class getters:
     
     def get_book_by_parameter(book_parameter:str,book_parameter_value:str):
         """ Returns the book object if the book_name is valid
-        
         Keyword arguments:
         book_name -- the book name (String)
         Returns:
@@ -220,7 +219,6 @@ class getters:
     
     def get_all_book_tags():
         """ Returns a list of all book tags
-        
         Returns:
         False -- if the parameter_name is invalid (Boolean)
         book_tags_list -- if the parameter_name is valid (list of dictionaries)
@@ -233,7 +231,6 @@ class getters:
     
     def get_book_tags(parameter_name:str):
         """ Returns a list of book tags
-        
         Keyword arguments:
         parameter_name -- the parameter name (String)
         Returns:

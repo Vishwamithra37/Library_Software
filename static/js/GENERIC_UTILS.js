@@ -57,6 +57,12 @@ class GENERIC_META_CALL {
         $(div).text(text);
         return div;
     }
+    Generic_span(classer, text) {
+        let span = document.createElement("span");
+        $(span).addClass(classer);
+        $(span).text(text);
+        return span;
+    }
     Generic_label(classer, text) {
         let label = document.createElement("label");
         $(label).addClass(classer);
