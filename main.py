@@ -97,18 +97,23 @@ def logout():
     flask.session.clear()
     return {'status': 'success'}, 200
 
-@app.route('/api/v1/users/get_user_list', methods=['GET'])
+@app.route('/api/v1/users/get_user_list', methods=['POST'])
 def get_user_list():
     UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
     if not UserDetails:
         return {'status': 'error', 'message': 'Invalid token'}, 400
     if not "get_user_list" in UserDetails["permissions"]:
         return {'status': 'error', 'message': 'You do not have permission to get user list'}, 400
-    skip=flask.request.args.get('skip')
-    limit=flask.request.args.get('limit')
+    JSON_DATA = flask.request.get_json()
+    print(JSON_DATA)
+    skip=JSON_DATA["skip"]
+    limit=JSON_DATA["limit"]
+    search_string=JSON_DATA["search_string"]
+    if JSON_DATA.keys() != {"skip","limit","search_string"}: return {'status': 'error', 'message': 'Missing keys'}, 400
     if int(skip)<0: return {'status': 'error', 'message': 'Skip cannot be negative'}, 400
     if int(limit)<0: return {'status': 'error', 'message': 'Limit cannot be negative'}, 400
-    step1=dbops.getters.get_user_list()
+    if int(len(search_string))<3: return {'status': 'error', 'message': 'Search string cannot be negative'}, 400
+    step1=dbops.getters.get_user_list(search_string,skip,limit)
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No users found'}, 400
@@ -241,7 +246,6 @@ def get_book_list():
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No books found'}, 400
-
 
 
 

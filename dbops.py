@@ -244,7 +244,7 @@ class getters:
             return v1[parameter_name]
         return False
 
-    def get_user_list(skip: int, limit: int):
+    def get_user_list(search_string:str, skip: int=0, limit: int=10,returner:dict={"_id":0}):
         """ Returns a list of users
         
         Keyword arguments:
@@ -255,7 +255,16 @@ class getters:
         all_users_list -- if the skip and limit are valid (list of dictionaries)
         """
         dac = dab["USERS"]
-        v1 = dac.find({},{"_id":0}).skip(skip).limit(limit)
+        fil={
+            # Regex call username.
+            "$or":[
+                {"username":{"$regex":search_string,"$options":"i"}},
+                {"email":{"$regex":search_string,"$options":"i"}},
+            ]
+        }
+        v1 = dac.find(fil,returner).skip(skip).limit(limit)
+        
+
         all_users_list=[]
         for i in v1:
             all_users_list.append(i)

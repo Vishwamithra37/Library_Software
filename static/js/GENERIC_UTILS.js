@@ -95,6 +95,20 @@ class GENERIC_META_CALL {
         // Generally varies from 0 to 82%.
         return Math.round((scrolledAmount / totalHeight) * 100);
     }
+    search_bar_dropdown(total_max_height, search_bar_class, search_bar_place_holder, search_bar_dropdown_class) {
+        let wrapper_div = document.createElement('div');
+        $(wrapper_div).addClass('static flex flex-col overflow-y-auto ' + total_max_height);
+        let search_barer = document.createElement('input');
+        $(search_barer).addClass(search_bar_class);
+        $(search_barer).attr('placeholder', search_bar_place_holder);
+
+        let dropdown_div = document.createElement('div');
+        $(dropdown_div).addClass(search_bar_dropdown_class + ' overflow-y-auto relative z-50');
+        $(wrapper_div).append(search_barer);
+        $(wrapper_div).append(dropdown_div);
+
+        return [wrapper_div, search_barer, dropdown_div];
+    }
 }
 class GENERIC_META_FLOATING_DIVS {
     bottom_bar_notification(message, classer, timeout = 3000) {

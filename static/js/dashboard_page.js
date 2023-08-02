@@ -272,8 +272,9 @@ class dashboard_page_cards {
         //     </div>
         // </div>
         let wrapper_div = new GENERIC_META_CALL().Generic_div(
-            "w-full flex flex-col shadow-md border-b-2 border-gray-200",
+            "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg",
             ""
+
         )
         let primary_card_div = new GENERIC_META_CALL().Generic_div(
             "flex flex-row justify-items-end text-black font-semibold p-2",
@@ -288,10 +289,18 @@ class dashboard_page_cards {
             "Lend"
         )
 
+
+        $(lend_button).click(function (e) {
+            let lend_card = new dashboard_page_cards().rent_button_card(book_data);
+            lend_card = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater(lend_card);
+            $('body').append(lend_card);
+        });
+
         let show_details_button = new GENERIC_META_CALL().Generic_div(
             "w-full text-right bg-gray-200 font-semibold  hover:text-green-600 text-green-500 cursor-pointer pl-2 pr-2 rounded-b-lg",
             "Show Details"
         )
+
         $(primary_card_div).append(book_title);
         $(primary_card_div).append(lend_button);
         $(wrapper_div).append(primary_card_div);
@@ -301,6 +310,55 @@ class dashboard_page_cards {
             // $('body').append(k1);
         });
         return wrapper_div;
+    }
+    rent_button_card(book_data) {
+        let User_Name_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "User Name"
+        );
+        let User_Name_search_bar = new GENERIC_META_CALL().search_bar_dropdown(
+            "h-56",
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Enter User Name...",
+            "bg-gray-100 pb-2"
+        )
+        $(User_Name_search_bar[1]).on('input', async function (e) {
+            //   Console and log the input.
+            console.log($(this).val());
+            //   Make an API call to get the list of users. 
+            if ($(this).val().length < 2) {
+                return;
+            }
+            let url = "/api/v1/users/get_user_list";
+            let method = "POST";
+            let data = {
+                "search_string": $(this).val(),
+                "limit": 10,
+                "skip": 0
+            }
+            data = JSON.stringify(data);
+            let r1 = await new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data);
+            console.log("The response is: ")
+            console.log(r1);
+            let options = [
+            ]
+            $(User_Name_search_bar[2]).empty();
+            for (let i = 0; i < options.length; i++) {
+                let test_div = new GENERIC_META_CALL().Generic_div(
+                    "w-full text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 p-2 bg-gray-200 hover:bg-gray-300",
+                    options[i]
+                )
+                $(User_Name_search_bar[2]).append(test_div);
+            }
+        });
+        let the_array = [
+            User_Name_label,
+            User_Name_search_bar[0],
+        ]
+        return the_array;
+
+
+
     }
 }
 class dashboard_page_API_calls {
@@ -316,14 +374,14 @@ class dashboard_page_API_calls {
         let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
             console.log(response);
             let book_list = response['data'];
+            let book_box = $('#books_box');
             let book_list_len = book_list.length;
             for (let i = 0; i < book_list_len; i++) {
                 book_list[i]['title'] = book_list[i]['title'].toUpperCase();
                 book_list[i]['title'] = i + 1 + ") " + book_list[i]['title'];
                 let k1 = new dashboard_page_cards().book_row_card(book_list[i]);
-                $('#books_box').append(k1);
+                $(book_box).append(k1);
             }
-
         }); // End of API call
 
 
