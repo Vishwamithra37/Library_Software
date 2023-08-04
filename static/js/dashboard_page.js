@@ -24,6 +24,8 @@ class dashboard_page_cards {
         form.setAttribute('enctype', 'multipart/form-data');
         form.setAttribute('autocomplete', 'off');
         // ['title', 'author', 'isbn', 'genre', 'description', 'tags', 'noofcopies']
+        let input_css_class = "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none"
+        let label_css_class = "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700"
         let title_label = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
             "Title"
@@ -281,19 +283,34 @@ class dashboard_page_cards {
             ""
         )
         let book_title = new GENERIC_META_CALL().Generic_span(
-            "",
+            "pt-2",
             book_data['title']
         )
-        let lend_button = new GENERIC_META_CALL().Generic_span(
-            "text-base float-right ml-auto mr-2 text-black hover:font-bold cursor-pointer",
-            "Lend"
+        let buttons_wrapper_div = new GENERIC_META_CALL().Generic_div(
+            "flex flex-row bg-gray-200 p-2 float-right ml-auto justify-evenly mr-2",
+            ""
         )
+        let lend_button = new GENERIC_META_CALL().Generic_span(
+            "text-base float-right ml-auto pr-3 border-r-2 border-gray-500 text-black hover:font-bold cursor-pointer",
+            "Rent"
+        )
+        let return_button = new GENERIC_META_CALL().Generic_span(
+            "text-base float-right ml-auto mr-2 pl-3 text-black hover:font-bold cursor-pointer",
+            "Return-Book"
+        )
+        $(buttons_wrapper_div).append(lend_button);
+        $(buttons_wrapper_div).append(return_button);
+
+
 
 
         $(lend_button).click(function (e) {
             let lend_card = new dashboard_page_cards().rent_button_card(book_data);
-            lend_card = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater(lend_card);
-            $('body').append(lend_card);
+            lend_card[0] = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater(lend_card[0]);
+            $(lend_card[1]).click(function () {
+                $(lend_card[0]).remove();
+            });
+            $('body').append(lend_card[0]);
         });
 
         let show_details_button = new GENERIC_META_CALL().Generic_div(
@@ -301,23 +318,28 @@ class dashboard_page_cards {
             "Show Details"
         )
 
+
         $(primary_card_div).append(book_title);
-        $(primary_card_div).append(lend_button);
+        $(primary_card_div).append(buttons_wrapper_div);
         $(wrapper_div).append(primary_card_div);
         $(wrapper_div).append(show_details_button);
         $(show_details_button).click(function () {
-            // let k1 = new dashboard_page_cards().book_details_card(book_data);
-            // $('body').append(k1);
+            let more_info_div = new dashboard_page_cards().book_info_div(book_data);
+            $(show_details_button).replaceWith(more_info_div);
         });
         return wrapper_div;
     }
     rent_button_card(book_data) {
+        let top_label = new GENERIC_META_CALL().Generic_div(
+            "text-xl font-semibold text-violet-500 border-b-2 border-gray-200 p-2 w-full dark:text-white dark:border-b dark:border-gray-600 dark:bg-gray-700 flex flex-row justify-between",
+            "Rent book"
+        )
         let User_Name_label = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
-            "User Name"
+            "User Name: "
         );
         let User_Name_search_bar = new GENERIC_META_CALL().search_bar_dropdown(
-            "h-56",
+            "max-h-56",
             "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
             "Enter User Name...",
             "bg-gray-100 pb-2"
@@ -327,6 +349,7 @@ class dashboard_page_cards {
             console.log($(this).val());
             //   Make an API call to get the list of users. 
             if ($(this).val().length < 2) {
+                $(User_Name_search_bar[2]).empty();
                 return;
             }
             let url = "/api/v1/users/get_user_list";
@@ -340,24 +363,119 @@ class dashboard_page_cards {
             let r1 = await new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data);
             console.log("The response is: ")
             console.log(r1);
-            let options = [
-            ]
-            $(User_Name_search_bar[2]).empty();
+            let options = r1['data'];
+
             for (let i = 0; i < options.length; i++) {
+                $(User_Name_search_bar[2]).empty();
                 let test_div = new GENERIC_META_CALL().Generic_div(
-                    "w-full text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 p-2 bg-gray-200 hover:bg-gray-300",
-                    options[i]
+                    "w-full text-gray-700 text-sm font-bold mb-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 p-2 bg-gray-200 hover:bg-gray-300",
+                    options[i]["username"]
                 )
+                $(test_div).attr('data-user_email', options[i]['email']).attr('data-user_name', options[i]['username']);
+                $(test_div).click(function (e) {
+                    // Transfer the username to the input box. And empty the options div.
+                    $(User_Name_search_bar[1]).val($(this).attr('data-user_email')).attr('title', $(this).attr('data-user_name'));
+                    $(User_Name_search_bar[2]).empty();
+                });
                 $(User_Name_search_bar[2]).append(test_div);
             }
         });
+        let Number_of_days_label = new GENERIC_META_CALL().Generic_label(
+            "w-full text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Number of days: "
+        );
+        let Number_of_days_input = new GENERIC_META_CALL().Generic_input(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Number of days",
+            ""
+        )
+        $(Number_of_days_input).attr('type', 'number').attr('min', '1').attr('max', '100').attr('name', 'noofdays').val('7')
+        let cancel_button = new GENERIC_META_CALL().Generic_button(
+            "p-2 text-gray-400 hover:text-black font-bold text-sm rounded focus:outline-none focus:shadow-outline",
+            "Cancel"
+        )
+        $(top_label).append(cancel_button);
+        let rent_button = new GENERIC_META_CALL().Generic_button(
+            "bg-blue-500 mt-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
+            "Rent"
+        )
+        $(rent_button).click(function () {
+        });
         let the_array = [
+            top_label,
             User_Name_label,
             User_Name_search_bar[0],
+            Number_of_days_label,
+            Number_of_days_input,
+            rent_button
         ]
-        return the_array;
 
+        return [the_array, cancel_button];
+    }
+    book_info_div(book_data) {
+        function more_info_div(book_data) {
+            let wrapper_div = new GENERIC_META_CALL().Generic_div(
+                "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg bg-gray-200 p-2 ",
+                ""
+            )
+            let Book_description = new GENERIC_META_CALL().Generic_div(
+                "w-full p-2 bg-gray-300 text-black font-semibold",
+                book_data["description"]
+            )
+            let Book_tags = new GENERIC_META_CALL().Generic_div(
+                "w-full p-2 mt-1 text-black  bg-gray-300 text-black font-semibold",
+                "Book Tags: "
+            )
+            let Book_tags_array = book_data["tags"]
+            for (let i = 0; i < Book_tags_array.length; i++) {
+                let Book_tag = new GENERIC_META_CALL().Generic_span(
+                    "bg-gray-200 text-black font-semibold p-2 pt-1 pb-1 m-1 rounded-lg",
+                    Book_tags_array[i]
+                )
+                $(Book_tags).append(Book_tag);
+            }
+            let Total_no_of_copies_label = new GENERIC_META_CALL().Generic_label(
+                "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+                "Total no of copies: "
+            );
+            let Total_no_of_copies_value = new GENERIC_META_CALL().Generic_span(
+                "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+                book_data['noofcopies']
+            );
+            let Available_copies_label = new GENERIC_META_CALL().Generic_label(
+                "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+                "Available copies: "
+            );
+            let Available_copies_value = new GENERIC_META_CALL().Generic_span(
+                "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+                book_data['noofcopies_available_currently']
+            );
+            let rented_copies_label = new GENERIC_META_CALL().Generic_label(
+                "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+                "Rented copies: "
+            );
+            let rented_copies_value = new GENERIC_META_CALL().Generic_span(
+                "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+                book_data['rentedcopies']
+            );
+            let show_rented_copies_details_button = new GENERIC_META_CALL().Generic_div(
+                "w-full text-right bg-gray-200 font-semibold  hover:text-green-600 text-green-500 cursor-pointer pl-2 pr-2 rounded-b-lg",
+                "Show Rented Copies Details"
+            )
 
+            $(wrapper_div).append(Book_description)
+            $(wrapper_div).append(Book_tags)
+            $(wrapper_div).append(Total_no_of_copies_label);
+            $(wrapper_div).append(Total_no_of_copies_value);
+            $(wrapper_div).append(Available_copies_label);
+            $(wrapper_div).append(Available_copies_value);
+            $(wrapper_div).append(rented_copies_label);
+            $(wrapper_div).append(rented_copies_value);
+            $(wrapper_div).append(show_rented_copies_details_button);
+
+            return wrapper_div;
+        }
+        return more_info_div(book_data);
 
     }
 }
