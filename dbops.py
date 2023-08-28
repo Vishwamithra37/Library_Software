@@ -35,7 +35,7 @@ def hash512(sstr: str):
 
 
 class inserts:
-    def rent_book(book_id: str, user_id: str, authoriser_id: str, rentedfor: str):
+    def rent_book(book_id: str, user_id: str, authorizer_object, rentedfor: str):
         """Returns True if the book was rented successfully\n
 
         Keyword arguments:\n
@@ -52,7 +52,7 @@ class inserts:
         dac2=dab["RENTS"]
         book_object=dac.find_one({"_id":ObjectId(book_id)})
         user_object=dac1.find_one({"_id":ObjectId(user_id)})
-        authoriser_user_object=dac1.find_one({"_id":ObjectId(authoriser_id)})
+        authoriser_user_object=authorizer_object
         # ################### If none of the objects exist ###################
         if not book_object or book_object["status"]!="Available" or not user_object or not authoriser_user_object:
             return False
@@ -60,7 +60,7 @@ class inserts:
         rent_object={
             "book_id":book_id,
             "user_id":user_id,
-            "authoriser_id":authoriser_id,
+            "authoriser_email":authoriser_user_object["email"],
             "timestamp":str(datetime.datetime.now()),
             "status":"Rented",
             "rentedfor": rentedfor
@@ -195,9 +195,11 @@ class getters:
         all_books_list -- if the skip and limit are valid (list of dictionaries)
         """
         dac = dab["BOOKS"]
-        v1 = dac.find({},{"_id":0}).skip(skip).limit(limit)
+        v1 = dac.find({}).skip(skip).limit(limit)
         all_books_list=[]
         for i in v1:
+            i["sid"]=str(i["_id"])
+            del i["_id"]
             all_books_list.append(i)
         if all_books_list:
             return all_books_list
@@ -244,7 +246,7 @@ class getters:
             return v1[parameter_name]
         return False
 
-    def get_user_list(search_string:str, skip: int=0, limit: int=10,returner:dict={"_id":0}):
+    def get_user_list(search_string:str, skip: int=0, limit: int=10,returner:dict={}):
         """ Returns a list of users
         
         Keyword arguments:
@@ -267,6 +269,9 @@ class getters:
 
         all_users_list=[]
         for i in v1:
+            i["sid"]=str(i["_id"])
+            del i["_id"]
+            del i["password"]
             all_users_list.append(i)
         if all_users_list:
             return all_users_list

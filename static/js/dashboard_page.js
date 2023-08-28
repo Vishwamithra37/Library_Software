@@ -260,6 +260,7 @@ class dashboard_page_cards {
             return wrapper_div;
         }
     }
+
     book_row_card(book_data) {
         //     <div class="w-full flex flex-col shadow-md border-b-2 border-gray-200">
         //     <div class="flex flex-row justify-items-end text-black font-semibold p-2">
@@ -329,21 +330,38 @@ class dashboard_page_cards {
         });
         return wrapper_div;
     }
+
     rent_button_card(book_data) {
         let top_label = new GENERIC_META_CALL().Generic_div(
             "text-xl font-semibold text-violet-500 border-b-2 border-gray-200 p-2 w-full dark:text-white dark:border-b dark:border-gray-600 dark:bg-gray-700 flex flex-row justify-between",
             "Rent book"
         )
+        let the_renting_form = document.createElement('form');
         let User_Name_label = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
             "User Name: "
         );
+        let rent_button = new GENERIC_META_CALL().Generic_button(
+            "bg-blue-500 mt-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
+            "Rent"
+        )
+        let extra_info_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 mt-2 border-gray-200 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let extra_info_div2 = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 mt-2 border-gray-200 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let book_data_info_card_for_rent_card = new dashboard_page_cards().book_info_div_for_rent_card(book_data);
+        $(extra_info_div).append(book_data_info_card_for_rent_card);
         let User_Name_search_bar = new GENERIC_META_CALL().search_bar_dropdown(
             "max-h-56",
-            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "w-full shadow h-8 w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
             "Enter User Name...",
             "bg-gray-100 pb-2"
         )
+        $(User_Name_search_bar[1]).attr('required', 'true').attr('minlength', '3').attr('name', 'username')
         $(User_Name_search_bar[1]).on('input', async function (e) {
             //   Console and log the input.
             console.log($(this).val());
@@ -374,7 +392,11 @@ class dashboard_page_cards {
                 $(test_div).attr('data-user_email', options[i]['email']).attr('data-user_name', options[i]['username']);
                 $(test_div).click(function (e) {
                     // Transfer the username to the input box. And empty the options div.
-                    $(User_Name_search_bar[1]).val($(this).attr('data-user_email')).attr('title', $(this).attr('data-user_name'));
+                    $(User_Name_search_bar[1]).val($(this).attr('data-user_email')).attr('title', $(this).attr('data-user_name')).attr('data-all_info', JSON.stringify(options[i]));
+                    let user_info_div = new dashboard_page_cards().user_info_div_for_rent_card(options[i]);
+                    $(user_info_div).attr('data-div_type', 'user_info_div_for_rent_card')
+                    $(extra_info_div2).empty();
+                    $(extra_info_div2).append(user_info_div);
                     $(User_Name_search_bar[2]).empty();
                 });
                 $(User_Name_search_bar[2]).append(test_div);
@@ -389,26 +411,60 @@ class dashboard_page_cards {
             "Number of days",
             ""
         )
-        $(Number_of_days_input).attr('type', 'number').attr('min', '1').attr('max', '100').attr('name', 'noofdays').val('7')
+        $(Number_of_days_input).attr('type', 'number').attr('min', '1').attr('max', '100').attr('name', 'noofdays').val('7').attr('required', 'true');
         let cancel_button = new GENERIC_META_CALL().Generic_button(
             "p-2 text-gray-400 hover:text-black font-bold text-sm rounded focus:outline-none focus:shadow-outline",
             "Cancel"
         )
         $(top_label).append(cancel_button);
-        let rent_button = new GENERIC_META_CALL().Generic_button(
-            "bg-blue-500 mt-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
-            "Rent"
-        )
-        $(rent_button).click(function () {
-        });
+
+        $(the_renting_form).append(User_Name_label);
+        $(the_renting_form).append(User_Name_search_bar[0]);
+        $(the_renting_form).append(Number_of_days_label);
+        $(the_renting_form).append(Number_of_days_input);
         let the_array = [
             top_label,
-            User_Name_label,
-            User_Name_search_bar[0],
-            Number_of_days_label,
-            Number_of_days_input,
-            rent_button
+            // User_Name_label,
+            // User_Name_search_bar[0],
+            // Number_of_days_label,
+            // Number_of_days_input,
+            the_renting_form,
+            rent_button,
+            extra_info_div,
+            extra_info_div2
         ]
+
+        $(rent_button).click(function () {
+            console.log("Rent button clicked");
+            if (the_renting_form.reportValidity()) {
+                let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Processing rent...", ' animate-pulse  bg-black p-2 text-yellow-500 text-sm font-bold rounded', 3000)
+                $('body').append(status);
+                let user_data = JSON.parse($(User_Name_search_bar[1]).attr('data-all_info'));
+                let form_data = {
+                    "book_id": book_data['sid'],
+                    "user_id": user_data['sid'],
+                    // "user_email": $(User_Name_search_bar[1]).val(),
+                    "noofdays": $(Number_of_days_input).val()
+                }
+                console.log(form_data);
+                let url = "/api/v1/admin/books/rent";
+                let method = "POST";
+                let data = JSON.stringify(form_data);
+                let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
+                    $(status).remove();
+                    let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully rented book", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
+                    $('body').append(status2);
+                    $(the_array[0]).remove();
+                }).catch(function (error) {
+                    $(status).remove();
+                    let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in renting book", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 1000)
+                    $('body').append(status2);
+                });
+            }
+
+
+        });
+
 
         return [the_array, cancel_button];
     }
@@ -434,6 +490,10 @@ class dashboard_page_cards {
                 )
                 $(Book_tags).append(Book_tag);
             }
+            let Book_author_label = new GENERIC_META_CALL().Generic_label(
+                "bg-gray-200 text-black font-semibold p-2 bg-gray-300 mb-1 ",
+                "Author: " + book_data['author']
+            );
             let Total_no_of_copies_label = new GENERIC_META_CALL().Generic_label(
                 "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
                 "Total no of copies: "
@@ -463,6 +523,7 @@ class dashboard_page_cards {
                 "Show Rented Copies Details"
             )
 
+            $(wrapper_div).append(Book_author_label);
             $(wrapper_div).append(Book_description)
             $(wrapper_div).append(Book_tags)
             $(wrapper_div).append(Total_no_of_copies_label);
@@ -477,6 +538,105 @@ class dashboard_page_cards {
         }
         return more_info_div(book_data);
 
+    }
+    user_info_div_for_rent_card(user_data) {
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let name_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Name: "
+        );
+        let name_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            user_data['username']
+        );
+        let Number_of_books_rented_currently = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Number of books rented currently: "
+        );
+        let Number_of_books_rented_currently_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            user_data["Library"]['Number_of_books_rented_currently']
+        );
+        let Number_of_books_returned_successfully = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Number of books returned successfully: "
+        );
+        let Number_of_books_returned_successfully_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            user_data["Library"]['Number_of_books_returned']
+        );
+        let Number_of_times_overdue = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Number of times overdue: "
+        );
+        let Number_of_times_overdue_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            user_data["Library"]['Number_of_times_overdue']
+        );
+        let Fine_amount_yet_to_be_paid = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Fine amount yet to be paid: "
+        );
+        let Fine_amount_yet_to_be_paid_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            user_data["Library"]['Total_fine_amount']
+        );
+
+        $(wrapper_div).append(name_label);
+        $(wrapper_div).append(name_value);
+        $(wrapper_div).append(Number_of_books_rented_currently);
+        $(wrapper_div).append(Number_of_books_rented_currently_value);
+        $(wrapper_div).append(Number_of_books_returned_successfully);
+        $(wrapper_div).append(Number_of_books_returned_successfully_value);
+        $(wrapper_div).append(Number_of_times_overdue);
+        $(wrapper_div).append(Number_of_times_overdue_value);
+        $(wrapper_div).append(Fine_amount_yet_to_be_paid);
+        $(wrapper_div).append(Fine_amount_yet_to_be_paid_value);
+        return wrapper_div;
+
+    }
+    book_info_div_for_rent_card(book_data) {
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let book_title_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Book title: "
+        );
+        let book_title_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            book_data['title']
+        );
+        let book_author_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Book author: "
+        );
+        let book_author_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            book_data['author']
+        );
+        let Book_tags = new GENERIC_META_CALL().Generic_div(
+            "w-full p-2 mt-1 text-black  bg-gray-300 text-black font-semibold flex flex-wrap",
+            " "
+        )
+        let Book_tags_array = book_data["tags"]
+        for (let i = 0; i < Book_tags_array.length; i++) {
+            let Book_tag = new GENERIC_META_CALL().Generic_span(
+                "bg-gray-200 text-black font-semibold p-2 pt-1 pb-1 m-1 rounded-lg",
+                Book_tags_array[i]
+            )
+            $(Book_tags).append(Book_tag);
+        }
+        $(wrapper_div).append(book_title_label);
+        $(wrapper_div).append(book_title_value);
+        $(wrapper_div).append(book_author_label);
+        $(wrapper_div).append(book_author_value);
+        $(wrapper_div).append(Book_tags);
+        return wrapper_div;
     }
 }
 class dashboard_page_API_calls {

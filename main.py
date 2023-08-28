@@ -173,16 +173,18 @@ def admin_rent_book():
     if not UserDetails:
         return {'status': 'error', 'message': 'Invalid token'}, 400
     if not "admin_rent_book" in UserDetails["permissions"]:
+        print(UserDetails["permissions"])
         return {'status': 'error', 'message': 'You do not have permission to rent books'}, 400
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
-    expected_keys = ['book_id', 'user_id']
+    expected_keys = ['book_id', 'user_id','noofdays']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
         return {'status': 'error', 'message': 'Missing keys'}, 400
     if 200<len(Flask_JSON['book_id']) < 2: return {'status': 'error', 'message': 'Book ID too short'}, 400
     if 200<len(Flask_JSON['user_id']) < 2: return {'status': 'error', 'message': 'User ID too short'}, 400
+    if int(Flask_JSON['noofdays']) <1 : return {'status': 'error', 'message': 'At least 1 day required'}, 400
     ################## End Validation #################
-    step1= dbops.inserts.rent_book(Flask_JSON["book_id"], Flask_JSON["user_id"], UserDetails["username"])
+    step1= dbops.inserts.rent_book(Flask_JSON["book_id"], Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"])
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Conditions to rent not met. Please check the number of books available or if it is already rented to the said user.'}, 500

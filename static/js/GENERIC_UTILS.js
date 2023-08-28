@@ -97,7 +97,7 @@ class GENERIC_META_CALL {
     }
     search_bar_dropdown(total_max_height, search_bar_class, search_bar_place_holder, search_bar_dropdown_class) {
         let wrapper_div = document.createElement('div');
-        $(wrapper_div).addClass('static flex flex-col overflow-y-auto ' + total_max_height);
+        $(wrapper_div).addClass('' + total_max_height);
         let search_barer = document.createElement('input');
         $(search_barer).addClass(search_bar_class);
         $(search_barer).attr('placeholder', search_bar_place_holder);
