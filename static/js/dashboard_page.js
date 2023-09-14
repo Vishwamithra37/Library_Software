@@ -8,6 +8,33 @@ $(document).ready(function () {
 $(document).ready(function () {
     new dashboard_page_API_calls().refresh_book_list(10, 0, "all");
 
+
+    let filter_elem = $('#filter_tags');
+    let k1 = new dashboard_page_API_calls().get_filter_tags().then(function (response) {
+        // console.log(response);
+        let filters = response['options'];
+        let len_of_options = filters.length;
+        for (let i = 0; i < len_of_options; i++) {
+            let option_div = document.createElement('div');
+            $(option_div).addClass('cursor-pointer h-11 p-2 bg-gray-200 hover:bg-gray-300 rounded-lg m-2 cursor-pointer shadow-lg dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600');
+            $(option_div).attr('data-option_value', filters[i]);
+            $(option_div).text(filters[i]);
+            $(filter_elem).append(option_div);
+
+            $(option_div).click(function () {
+                new dashboard_page_API_calls().refresh_book_list(10, 0, $(this).attr('data-option_value'));
+            })
+
+
+
+
+        }
+
+
+    });
+
+
+
 });
 
 class dashboard_page_cards {
@@ -262,22 +289,9 @@ class dashboard_page_cards {
     }
 
     book_row_card(book_data) {
-        //     <div class="w-full flex flex-col shadow-md border-b-2 border-gray-200">
-        //     <div class="flex flex-row justify-items-end text-black font-semibold p-2">
-        //         <span>1)<span> Higher Engineering Mathematics</span> </span>
-        //         <span class="text-base float-right ml-auto mr-2">Lend</span>
-        //         <!-- <span class="text-base float-right ml-auto mr-2">Make Unavailable</span>
-        //         <span class="text-base float-right ml-auto mr-2">Hide Book</span> -->
-        //     </div>
-        //     <div
-        //         class="w-full text-right bg-gray-200 font-semibold  hover:text-green-600 text-green-500 cursor-pointer pl-2 pr-2 rounded-b-lg">
-        //         Show Details
-        //     </div>
-        // </div>
         let wrapper_div = new GENERIC_META_CALL().Generic_div(
             "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg",
             ""
-
         )
         let primary_card_div = new GENERIC_META_CALL().Generic_div(
             "flex flex-row justify-items-end text-black font-semibold p-2",
@@ -292,15 +306,15 @@ class dashboard_page_cards {
             ""
         )
         let lend_button = new GENERIC_META_CALL().Generic_span(
-            "text-base float-right ml-auto p-0 border-r-0 border-gray-500 text-black hover:font-bold cursor-pointer",
+            "text-base float-right ml-auto pr-3 border-r-2 border-gray-500 text-black hover:font-bold cursor-pointer",
             "Rent Book"
         )
-        let return_button = new GENERIC_META_CALL().Generic_span(
+        let edit_book = new GENERIC_META_CALL().Generic_span(
             "text-base float-right ml-auto mr-2 pl-3 text-black hover:font-bold cursor-pointer",
-            "Return-Book"
+            "Edit-Details"
         )
         $(buttons_wrapper_div).append(lend_button);
-        // $(buttons_wrapper_div).append(return_button);
+        $(buttons_wrapper_div).append(edit_book);
 
 
 
@@ -640,6 +654,14 @@ class dashboard_page_cards {
     }
 }
 class dashboard_page_API_calls {
+    async get_filter_tags() {
+        let url = "/api/v1/admin/get_book_tags?book_tag_parameter=tags";
+        let method = "GET";
+        let data = {};
+        let r1 = await new GENERIC_APICALLS().GenericAPICallv2(url, method, data);
+        console.log(r1);
+        return r1;
+    }
     refresh_book_list(limit, skip, special_filter) {
         let url = "/api/v1/get_book_list";
         let method = "POST";

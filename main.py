@@ -241,10 +241,17 @@ def get_book_list():
     limit=JSON_DATA["limit"]
     ##################################################################################################################SCARY BUG ALERT####################################################################################################
     special_filter=JSON_DATA["special_filter"]
+    if special_filter.keys() != {"search_string","generic","tags","time","status"}: return {'status': 'error', 'message': 'Missing keys'}, 400
+    if int(len(special_filter["search_string"]))<2: return {'status': 'error', 'message': 'Search string cannot be negative'}, 400
+    if int(len(special_filter["generic"]))<1: return {'status': 'error', 'message': 'Generic cannot be negative'}, 400
+    if int(len(special_filter["tags"]))<1: return {'status': 'error', 'message': 'Tags cannot be negative'}, 400
+    if special_filter["time"] not in ["asc","desc"]: return {'status': 'error', 'message': 'Time cannot be negative'}, 400
+    if special_filter["status"] not in ["Available","Rented","All"]: return {'status': 'error', 'message': 'Status cannot be negative'}, 400
     ##################################################################################################################SCARY BUG ALERT####################################################################################################
     if int(skip)<0: return {'status': 'error', 'message': 'Skip cannot be negative'}, 400
     if int(limit)<0: return {'status': 'error', 'message': 'Limit cannot be negative'}, 400
     step1=dbops.getters.get_book_list(skip,limit)
+    special_step=dbops.getters.get_book_list_special(special_filter)
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No books found'}, 400

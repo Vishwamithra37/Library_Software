@@ -205,6 +205,48 @@ class getters:
             return all_books_list
         return False
     
+    def get_book_list_special(skip: int=0, limit: int=0,returner:dict={},sorting_order=-1,search_string=0,generic=[],tags=[]):
+        """ Returns a list of books
+        Keyword arguments:
+        skip -- the number of books to skip (Integer)
+        limit -- the number of books to return (Integer)
+        returner -- the fields to return (Dictionary)
+        sorting_order -- the sorting order (Integer) (optional default=-1)
+        search_string -- the search string (String) (optional)
+        generic -- the generic search string (List) (optional)
+        tags -- the tags to search (List) (optional)
+        Returns:
+        False -- if the skip and limit are invalid (Boolean)
+        all_books_list -- if the skip and limit are valid (list of dictionaries)
+        """ 
+        dac = dab["BOOKS"]
+        fil={}
+        if search_string:
+            fil={
+                "$or":[
+                    {"book_name":{"$regex":search_string,"$options":"i"}},
+                    {"author_name":{"$regex":search_string,"$options":"i"}},
+                    {"book_description":{"$regex":search_string,"$options":"i"}},
+                    {"book_tags":{"$regex":search_string,"$options":"i"}},
+                ]
+            }
+        if generic:
+            # Alphabetical search.
+            fil["$or"]=[]
+            for i in generic:
+                fil["$or"].append({"book_name":{"$regex":'/^'+i+'/',"options":"i"}})               
+        if tags:
+            fil["book_tags"]={"$in":tags}
+        v1 = dac.find(fil,returner).sort("timestamp",sorting_order).skip(skip).limit(limit)
+        all_books_list=[]
+        for i in v1:
+            i["sid"]=str(i["_id"])
+            del i["_id"]
+            all_books_list.append(i)
+        if all_books_list:
+            return all_books_list
+        return False
+    
     def get_book_by_parameter(book_parameter:str,book_parameter_value:str):
         """ Returns the book object if the book_name is valid
         Keyword arguments:
