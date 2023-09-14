@@ -292,15 +292,15 @@ class dashboard_page_cards {
             ""
         )
         let lend_button = new GENERIC_META_CALL().Generic_span(
-            "text-base float-right ml-auto pr-3 border-r-2 border-gray-500 text-black hover:font-bold cursor-pointer",
-            "Rent"
+            "text-base float-right ml-auto p-0 border-r-0 border-gray-500 text-black hover:font-bold cursor-pointer",
+            "Rent Book"
         )
         let return_button = new GENERIC_META_CALL().Generic_span(
             "text-base float-right ml-auto mr-2 pl-3 text-black hover:font-bold cursor-pointer",
             "Return-Book"
         )
         $(buttons_wrapper_div).append(lend_button);
-        $(buttons_wrapper_div).append(return_button);
+        // $(buttons_wrapper_div).append(return_button);
 
 
 
@@ -516,7 +516,7 @@ class dashboard_page_cards {
             );
             let rented_copies_value = new GENERIC_META_CALL().Generic_span(
                 "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
-                book_data['rentedcopies']
+                book_data['noofcopies_rented_currently']
             );
             let show_rented_copies_details_button = new GENERIC_META_CALL().Generic_div(
                 "w-full text-right bg-gray-200 font-semibold  hover:text-green-600 text-green-500 cursor-pointer pl-2 pr-2 rounded-b-lg",
@@ -661,7 +661,5 @@ class dashboard_page_API_calls {
                 $(book_box).append(k1);
             }
         }); // End of API call
-
-
     }
 }
