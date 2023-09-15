@@ -26,6 +26,7 @@ $(document).ready(function () {
                 // First add border and color it green toggle.
                 // Second as it inside the data-tags_selected_array, remove it from the array(If it is present).
                 // Third, if it is not present in the array, add it to the array.
+
                 if ($(this).attr('data-selected') == 'Yes') {
                     $(this).removeClass('border-2 border-green-500');
                     $(this).attr('data-selected', 'No');
@@ -59,6 +60,7 @@ $(document).ready(function () {
                         }
                     )
                 }
+                $(filter_elem).change();
 
             })
 
@@ -68,6 +70,15 @@ $(document).ready(function () {
         }
 
 
+    });
+
+    $(filter_elem).change(function () {
+        if ($(this).attr('data-tags_selected_array') != '[]') {
+
+            $('#cleaner').addClass('border-red-500 border-t-2 border-b-2');
+        } else {
+            $('#cleaner').removeClass('border-red-500 border-2 border-t-2 border-b-2');
+        }
     });
 
 
@@ -90,6 +101,9 @@ $(document).ready(function () {
             )
 
             return;
+        } else {
+            $('#books_box').empty();
+            new dashboard_page_API_calls().refresh_book_list(10, 0, "all");
         }
     });
 
