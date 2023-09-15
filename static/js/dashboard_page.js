@@ -11,6 +11,7 @@ $(document).ready(function () {
 
     let filter_elem = $('#filter_tags');
     let k1 = new dashboard_page_API_calls().get_filter_tags().then(function (response) {
+        $(filter_elem).attr('data-tags_selected_array', '[]')
         // console.log(response);
         let filters = response['options'];
         let len_of_options = filters.length;
@@ -22,7 +23,43 @@ $(document).ready(function () {
             $(filter_elem).append(option_div);
 
             $(option_div).click(function () {
-                new dashboard_page_API_calls().refresh_book_list(10, 0, $(this).attr('data-option_value'));
+                // First add border and color it green toggle.
+                // Second as it inside the data-tags_selected_array, remove it from the array(If it is present).
+                // Third, if it is not present in the array, add it to the array.
+                if ($(this).attr('data-selected') == 'Yes') {
+                    $(this).removeClass('border-2 border-green-500');
+                    $(this).attr('data-selected', 'No');
+                    let tags_selected_array = JSON.parse($(filter_elem).attr('data-tags_selected_array'));
+                    let index = tags_selected_array.indexOf($(this).attr('data-option_value'));
+                    if (index > -1) {
+                        tags_selected_array.splice(index, 1);
+                    }
+                    $(filter_elem).attr('data-tags_selected_array', JSON.stringify(tags_selected_array));
+                } else {
+                    $(this).addClass('border-2 border-green-500');
+                    $(this).attr('data-selected', 'Yes');
+                    let tags_selected_array = JSON.parse($(filter_elem).attr('data-tags_selected_array'));
+                    tags_selected_array.push($(this).attr('data-option_value'));
+                    $(filter_elem).attr('data-tags_selected_array', JSON.stringify(tags_selected_array));
+                }
+                if ($(filter_elem).attr('data-tags_selected_array') == '[]') {
+                    $('#books_box').empty();
+                    new dashboard_page_API_calls().refresh_book_list(10, 0, "all");
+                } else {
+                    $('#books_box').empty();
+                    new dashboard_page_API_calls().refresh_book_list_special(
+                        50,
+                        0,
+                        {
+                            "tags": JSON.parse($(filter_elem).attr('data-tags_selected_array')),
+                            "generic": "A",
+                            "search_string": "",
+                            "status": "Available",
+                            "time": "asc"
+                        }
+                    )
+                }
+
             })
 
 
@@ -31,6 +68,29 @@ $(document).ready(function () {
         }
 
 
+    });
+
+
+    $('#search_bar').on('input', async function (e) {
+        //   Console and log the input.
+        console.log($(this).val());
+        //   Make an API call to get the list of users. 
+        if ($(this).val().length > 2) {
+            $('#books_box').empty();
+            new dashboard_page_API_calls().refresh_book_list_special(
+                50,
+                0,
+                {
+                    "tags": JSON.parse($(filter_elem).attr('data-tags_selected_array')),
+                    "generic": "A",
+                    "search_string": $(this).val(),
+                    "status": "Available",
+                    "time": "asc"
+                }
+            )
+
+            return;
+        }
     });
 
 
@@ -684,4 +744,32 @@ class dashboard_page_API_calls {
             }
         }); // End of API call
     }
+
+    refresh_book_list_special(limit, skip, special_filter) {
+        let url = "/api/v1/get_book_list_special";
+        let method = "POST";
+        let the_data = {
+            "limit": limit,
+            "skip": skip,
+            "special_filter": special_filter
+        }
+        let data = JSON.stringify(the_data);
+        let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
+            console.log(response);
+            let book_list = response['data'];
+            let book_box = $('#books_box');
+
+            let book_list_len = book_list.length;
+            for (let i = 0; i < book_list_len; i++) {
+                book_list[i]['title'] = book_list[i]['title'].toUpperCase();
+                book_list[i]['title'] = i + 1 + ") " + book_list[i]['title'];
+                let k1 = new dashboard_page_cards().book_row_card(book_list[i]);
+                $(book_box).append(k1);
+            }
+        }); // End of API call
+    }
+
+
+
+
 }

@@ -224,19 +224,20 @@ class getters:
         if search_string:
             fil={
                 "$or":[
-                    {"book_name":{"$regex":search_string,"$options":"i"}},
-                    {"author_name":{"$regex":search_string,"$options":"i"}},
-                    {"book_description":{"$regex":search_string,"$options":"i"}},
-                    {"book_tags":{"$regex":search_string,"$options":"i"}},
+                    {"title":{"$regex":search_string,"$options":"i"}},
+                    {"author":{"$regex":search_string,"$options":"i"}},
+                    {"description":{"$regex":search_string,"$options":"i"}},
+                    {"tags":{"$regex":search_string,"$options":"i"}},
                 ]
             }
-        if generic:
-            # Alphabetical search.
-            fil["$or"]=[]
-            for i in generic:
-                fil["$or"].append({"book_name":{"$regex":'/^'+i+'/',"options":"i"}})               
+        # if generic:
+        #     # Alphabetical search.
+        #     fil["$or"]=[]
+        #     for i in generic:
+        #         fil["$or"].append({"book_name":{"$regex":'/^'+i+'/',"options":"i"}})               
         if tags:
-            fil["book_tags"]={"$in":tags}
+            fil["tags"]={"$in":tags}
+        print(fil)    
         v1 = dac.find(fil,returner).sort("timestamp",sorting_order).skip(skip).limit(limit)
         all_books_list=[]
         for i in v1:

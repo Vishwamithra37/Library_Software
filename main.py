@@ -240,18 +240,49 @@ def get_book_list():
     skip=JSON_DATA["skip"]
     limit=JSON_DATA["limit"]
     ##################################################################################################################SCARY BUG ALERT####################################################################################################
+
+    ##################################################################################################################SCARY BUG ALERT####################################################################################################
+    if int(skip)<0: return {'status': 'error', 'message': 'Skip cannot be negative'}, 400
+    if int(limit)<0: return {'status': 'error', 'message': 'Limit cannot be negative'}, 400
+    step1=dbops.getters.get_book_list(skip,limit)
+    # special_step=dbops.getters.get_book_list_special(special_filter)
+    if step1:
+        return {'status': 'success', 'data': step1}, 200
+    return {'status': 'error', 'message': 'No books found'}, 400
+
+
+
+@app.route('/api/v1/get_book_list_special', methods=['POST'])
+def get_book_list_special_filter():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error', 'message': 'Invalid token'}, 400
+    if not "get_book_list" in UserDetails["permissions"]:
+        print(UserDetails["permissions"])
+        return {'status': 'error', 'message': 'You do not have permission to get book list'}, 400
+    JSON_DATA = flask.request.get_json()
+    if JSON_DATA.keys() != {"skip","limit","special_filter"}: return {'status': 'error', 'message': 'Missing keys'}, 400
+    skip=JSON_DATA["skip"]
+    limit=JSON_DATA["limit"]
+    ##################################################################################################################SCARY BUG ALERT####################################################################################################
     special_filter=JSON_DATA["special_filter"]
     if special_filter.keys() != {"search_string","generic","tags","time","status"}: return {'status': 'error', 'message': 'Missing keys'}, 400
-    if int(len(special_filter["search_string"]))<2: return {'status': 'error', 'message': 'Search string cannot be negative'}, 400
     if int(len(special_filter["generic"]))<1: return {'status': 'error', 'message': 'Generic cannot be negative'}, 400
-    if int(len(special_filter["tags"]))<1: return {'status': 'error', 'message': 'Tags cannot be negative'}, 400
     if special_filter["time"] not in ["asc","desc"]: return {'status': 'error', 'message': 'Time cannot be negative'}, 400
     if special_filter["status"] not in ["Available","Rented","All"]: return {'status': 'error', 'message': 'Status cannot be negative'}, 400
     ##################################################################################################################SCARY BUG ALERT####################################################################################################
     if int(skip)<0: return {'status': 'error', 'message': 'Skip cannot be negative'}, 400
     if int(limit)<0: return {'status': 'error', 'message': 'Limit cannot be negative'}, 400
-    step1=dbops.getters.get_book_list(skip,limit)
-    special_step=dbops.getters.get_book_list_special(special_filter)
+    print(special_filter)
+    step1=dbops.getters.get_book_list_special(
+        skip,
+        limit,
+        {},
+        -1,
+        special_filter["search_string"],    
+        special_filter["generic"],
+        special_filter["tags"],
+    )
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No books found'}, 400
