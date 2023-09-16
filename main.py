@@ -225,6 +225,12 @@ def get_book_tags():
         return {'status': 'success', 'options': book_tag_parameters}, 200
     return {'status': 'success', 'options': []}, 200
 
+@app.route('/api/v1/admin/return_books', methods=['POST'])
+def admin_return_book():
+    pass
+
+
+
 #################### End Admin Endpoints ##########################
 
 @app.route('/api/v1/get_book_list', methods=['POST'])

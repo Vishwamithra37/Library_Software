@@ -8,7 +8,7 @@ $(document).ready(function () {
 $(document).ready(function () {
     new dashboard_page_API_calls().refresh_book_list(10, 0, "all");
 
-
+    // Filters Secction
     let filter_elem = $('#filter_tags');
     let k1 = new dashboard_page_API_calls().get_filter_tags().then(function (response) {
         $(filter_elem).attr('data-tags_selected_array', '[]')
@@ -81,7 +81,6 @@ $(document).ready(function () {
         }
     });
 
-
     $('#search_bar').on('input', async function (e) {
         //   Console and log the input.
         console.log($(this).val());
@@ -106,8 +105,88 @@ $(document).ready(function () {
             new dashboard_page_API_calls().refresh_book_list(10, 0, "all");
         }
     });
+    // End of Filters Section
 
 
+    // Start of return book scanner section
+
+    $('#return_book').click(function () {
+        // Request for permission to use the camera on the device.
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices
+                .getUserMedia({ video: true })
+                .then(function (stream) {
+                    // Your code when camera permission is granted
+                    let scanner_div = new GENERIC_META_CALL().Generic_div(
+                        'w-full bg-gray-200 shadow-lg rounded-lg',
+                        ''
+                    )
+                    $(scanner_div).attr('id', 'scanner_div');
+                    let cancel_button = new GENERIC_META_CALL().Generic_button(
+                        "p-2 text-gray-400 bg- hover:text-black w-full text-right font-bold text-sm rounded  focus:outline-none focus:shadow-outline",
+                        "Cancel"
+                    )
+                    let floater = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater([cancel_button, scanner_div]);
+                    $(floater).children().removeClass('h-5/6').addClass('h-auto');
+                    $('body').append(floater);
+
+                    $(cancel_button).click(function () {
+                        // Stop the scanner
+                        html5QrCode.stop().then(ignore => {
+                            // QR Code scanning is stopped.
+                        }).catch(err => {
+                            // Stop failed, handle it.
+                        });
+                        $(floater).remove();
+                    });
+
+                    function onScanSuccess(decodedText, decodedResult) {
+                        // handle the scanned code as you like, for example:
+                        let pure_string = JSON.parse(decodedText)
+                        let final_string = JSON.parse(pure_string)
+                        console.log(final_string);
+                        // If it contains the keys: User_id, Organization and card_type as "Identity_card" then it is a valid card and we can proceed to the next step.
+                        // If it contains the keys: Book_id, Organization and card_type as "Book_card" then it is a valid card and we can proceed to the next step.
+                        if (final_string['card_type'] == "Book_card" && Object.keys(final_string).includes('Book_id') && Object.keys(final_string).includes('Organization')) {
+                            console.log("Book card detected");
+                        }
+                        if (final_string['card_type'] == "Identity_card" && Object.keys(final_string).includes('User_id') && Object.keys(final_string).includes('Organization')) {
+                            console.log("User card detected");
+                        }
+
+
+
+
+
+
+                    }
+                    let config = {
+                        fps: 10,
+                        // qrbox: { width: 100, height: 100 },
+                        rememberLastUsedCamera: true,
+                        // Only support camera scan type.
+                        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+                    };
+                    let html5QrCode = new Html5Qrcode("scanner_div", config);
+                    html5QrCode.start(
+                        { facingMode: "environment" },
+                        { fps: 10 },
+                        onScanSuccess
+                    ).catch(err => {
+                        console.log(err);
+                    }
+                    );
+                })
+                .catch(function (error) {
+                    return; // Return or handle the case when camera permission is denied or an error occurs
+                });
+        }
+
+    });
+
+
+
+    // End of return book scanner section
 
 });
 

@@ -7,8 +7,10 @@
     <title>Galam Library Managemsent</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/html_5_QR_scanner.js') }}"></script>
     <script src="{{ url_for('static', filename='js/GENERIC_UTILS.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dashboard_page.js') }}"></script>
+
 </head>
 
 <body class="bg-white dark:bg-gray-800 w-full h-full">
@@ -58,8 +60,8 @@
                 <span>Clear Filters</span>
             </div>
 
-            <div
-                class="w-full p-2 mt-2 bg-gray-200 hover:bg-gray-300 text-black font-semibold shadow-lg text-center cursor-pointer">
+            <div id="return_book"
+                class="w-full p-2 mt-2 bg-green-300 hover:bg-green-400 text-black font-semibold shadow-lg text-center cursor-pointer">
                 <span>Return Book</span>
             </div>
         </div>
