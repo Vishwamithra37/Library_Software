@@ -116,6 +116,7 @@ $(document).ready(function () {
             navigator.mediaDevices
                 .getUserMedia({ video: true })
                 .then(function (stream) {
+
                     // Your code when camera permission is granted
                     let scanner_div = new GENERIC_META_CALL().Generic_div(
                         'w-full bg-gray-200 shadow-lg rounded-lg',
@@ -126,10 +127,21 @@ $(document).ready(function () {
                         "p-2 text-gray-400 bg- hover:text-black w-full text-right font-bold text-sm rounded  focus:outline-none focus:shadow-outline",
                         "Cancel"
                     )
-                    let floater = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater([cancel_button, scanner_div]);
-                    $(floater).children().removeClass('h-5/6').addClass('h-auto');
-                    $('body').append(floater);
+                    let stoper0 = new GENERIC_META_CALL().Generic_div('h-auto w-auto', '');
+                    let stoper1 = new GENERIC_META_CALL().Generic_div('h-auto flex flex-col overflow-x-auto', '');
+                    let col_holder = new GENERIC_META_CALL().Generic_div('h-auto max-w-fit p-2 ml-2 flex flex-col overflow-x-auto bg-white', '');
 
+                    let stoper2 = new GENERIC_META_CALL().Generic_put_it_in_flex_col("flex flex-col", [cancel_button, scanner_div]);
+                    let floater = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater([stoper2]);
+                    $(stoper0).attr('data-div_type', 'user_card_placeholder');
+                    $(stoper1).attr('data-div_type', 'book_card_placeholder');
+                    $(col_holder).append(stoper1);
+                    $(col_holder).append(stoper0);
+                    $(floater).append(col_holder);
+
+
+                    $(floater).children().removeClass('h-5/6').addClass('h-auto overflow-y-auto');
+                    $('body').append(floater)
                     $(cancel_button).click(function () {
                         // Stop the scanner
                         html5QrCode.stop().then(ignore => {
@@ -140,26 +152,8 @@ $(document).ready(function () {
                         $(floater).remove();
                     });
 
-                    function onScanSuccess(decodedText, decodedResult) {
-                        // handle the scanned code as you like, for example:
-                        let pure_string = JSON.parse(decodedText)
-                        let final_string = JSON.parse(pure_string)
-                        console.log(final_string);
-                        // If it contains the keys: User_id, Organization and card_type as "Identity_card" then it is a valid card and we can proceed to the next step.
-                        // If it contains the keys: Book_id, Organization and card_type as "Book_card" then it is a valid card and we can proceed to the next step.
-                        if (final_string['card_type'] == "Book_card" && Object.keys(final_string).includes('Book_id') && Object.keys(final_string).includes('Organization')) {
-                            console.log("Book card detected");
-                        }
-                        if (final_string['card_type'] == "Identity_card" && Object.keys(final_string).includes('User_id') && Object.keys(final_string).includes('Organization')) {
-                            console.log("User card detected");
-                        }
 
 
-
-
-
-
-                    }
                     let config = {
                         fps: 10,
                         // qrbox: { width: 100, height: 100 },
@@ -176,6 +170,33 @@ $(document).ready(function () {
                         console.log(err);
                     }
                     );
+                    function onScanSuccess(decodedText, decodedResult) {
+                        // handle the scanned code as you like, for example:
+                        let pure_string = JSON.parse(decodedText)
+                        let final_string = JSON.parse(pure_string)
+                        console.log(final_string);
+                        // If it contains the keys: User_id, Organization and card_type as "Identity_card" then it is a valid card and we can proceed to the next step.
+                        // If it contains the keys: Book_id, Organization and card_type as "Book_card" then it is a valid card and we can proceed to the next step.
+                        if (final_string['card_type'] == "Book_card" && Object.keys(final_string).includes('Book_id') && Object.keys(final_string).includes('Organization')) {
+                            console.log("Book card detected");
+
+                        }
+                        if (final_string['card_type'] == "Identity_card" && Object.keys(final_string).includes('User_id') && Object.keys(final_string).includes('Organization')) {
+                            console.log("User card detected");
+                            let user_detail_getter = new GENERIC_APICALLS().GenericAPIJSON_CALL(
+                                '/api/v1/users/get_specific_user_data',
+                                'POST',
+                                JSON.stringify({ "id_number": final_string['User_id'], "organization": final_string['Organization'], "email": final_string['email'] })
+                            ).then(function (response) {
+                                console.log(response);
+                                let user_data = response['data'];
+                                let user_card = new dashboard_page_cards().user_info_div_for_rent_card(user_data);
+                                $(user_card).attr('data-div_type', 'user_card_placeholder')
+
+                                $(floater).find('[data-div_type="user_card_placeholder"]').replaceWith(user_card);
+                            });
+                        }
+                    }
                 })
                 .catch(function (error) {
                     return; // Return or handle the case when camera permission is denied or an error occurs
@@ -191,6 +212,9 @@ $(document).ready(function () {
 });
 
 class dashboard_page_cards {
+
+
+
     register_new_book_div() {
         let top_label = new GENERIC_META_CALL().Generic_div(
             "text-xl font-semibold text-violet-500 border-b-2 border-gray-200 p-2 w-full dark:text-white dark:border-b dark:border-gray-600 dark:bg-gray-700 flex flex-row justify-between",
@@ -766,6 +790,47 @@ class dashboard_page_cards {
 
     }
     book_info_div_for_rent_card(book_data) {
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let book_title_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Book title: "
+        );
+        let book_title_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            book_data['title']
+        );
+        let book_author_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Book author: "
+        );
+        let book_author_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            book_data['author']
+        );
+        let Book_tags = new GENERIC_META_CALL().Generic_div(
+            "w-full p-2 mt-1 text-black  bg-gray-300 text-black font-semibold flex flex-wrap",
+            " "
+        )
+        let Book_tags_array = book_data["tags"]
+        for (let i = 0; i < Book_tags_array.length; i++) {
+            let Book_tag = new GENERIC_META_CALL().Generic_span(
+                "bg-gray-200 text-black font-semibold p-2 pt-1 pb-1 m-1 rounded-lg",
+                Book_tags_array[i]
+            )
+            $(Book_tags).append(Book_tag);
+        }
+        $(wrapper_div).append(book_title_label);
+        $(wrapper_div).append(book_title_value);
+        $(wrapper_div).append(book_author_label);
+        $(wrapper_div).append(book_author_value);
+        $(wrapper_div).append(Book_tags);
+        return wrapper_div;
+    }
+
+    book_info_card_scanner(book_data) {
         let wrapper_div = new GENERIC_META_CALL().Generic_div(
             "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg bg-gray-200 p-2 ",
             ""

@@ -45,6 +45,16 @@ class GENERIC_APICALLS {
 
 }
 class GENERIC_META_CALL {
+    Generic_put_it_in_flex_col(classer, stack) {
+        let wrapper_div = document.createElement('div');
+        $(wrapper_div).addClass(classer);
+        let len_of_stack = stack.length;
+        for (let i = 0; i < len_of_stack; i++) {
+            $(wrapper_div).append(stack[i]);
+        }
+        return wrapper_div;
+    }
+
     Generic_button(classer, text) {
         let button = document.createElement("button");
         $(button).addClass(classer);
@@ -273,5 +283,19 @@ class GENERIC_META_FLOATING_DIVS {
         $(wrapperdiv).append(wrapper_2);
         return wrapperdiv;
     }
+    multi_row_stack_floater(stacks) {
+        // Options is an array of Elements. Each specifying the content of each column.
+        let wrapperdiv = document.createElement('div');
+        $(wrapperdiv).addClass('fixed z-40 w-full h-full top-0 flex justify-center items-center bg-white dark:bg-black bg-opacity-50 border-gray-700 shadow-lg overflow-y-auto');
+        let wrapper_2 = document.createElement('div');
+        $(wrapper_2).addClass('flex w-full md:w-2/6 h-auto bg-gray-900 bg-white shadow-lg p-2 border border-black border-gray-200 dark:bg-gray-900 shadow-lg rounded-lg overflow-y-auto');
+        let len_of_options = stacks.length;
+        for (let i = 0; i <= len_of_options; i++) {
+            $(wrapper_2).append(stacks[i]);
+        }
+        $(wrapperdiv).append(wrapper_2);
+        return wrapperdiv;
+    }
+
 
 }

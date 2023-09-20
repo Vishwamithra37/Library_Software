@@ -274,6 +274,7 @@ class getters:
             return v1
         return False
     
+    
     def get_book_tags(parameter_name:str):
         """ Returns a list of book tags
         Keyword arguments:
@@ -319,7 +320,37 @@ class getters:
         if all_users_list:
             return all_users_list
         return False
+
+    def get_specific_user_data(user_email:str,id_number:str,organization:str):
+        """Returns the user object if the user_email is valid
         
+        Keyword arguments:
+        user_email -- the user email (String)
+        id_number -- the user id_number (String)
+        organization -- the user organization (String)
+        Returns:
+        False -- if the user_email is invalid (Boolean)
+        user -- if the user_email is valid (Dictionary)
+        """
+        dac=dab["USERS"]
+        fil={
+            "$or":[
+                {"email":user_email},
+                {"id_number":id_number},
+            ],
+            "organization":organization
+        }
+        ret={
+            "_id":0,
+        }
+        v1=dac.find_one(fil,ret)
+        if v1:
+            return v1
+        return False
+
+
+
+
     def get_book_by_id(book_id: str):
         """ Returns the book object if the book_id is valid
         

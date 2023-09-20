@@ -118,6 +118,24 @@ def get_user_list():
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No users found'}, 400
 
+@app.route('/api/v1/users/get_specific_user_data', methods=['POST'])
+def get_specific_user_list():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error', 'message': 'Invalid token'}, 400
+    if not "get_specific_user_list" in UserDetails["permissions"]:
+        return {'status': 'error', 'message': 'You do not have permission to get user list'}, 400
+    JSON_DATA = flask.request.get_json()
+    print(JSON_DATA)
+    if JSON_DATA.keys() != {"email","id_number","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
+    if int(len(JSON_DATA["email"]))<3: return {'status': 'error', 'message': 'Email cannot be negative'}, 400
+    if int(len(JSON_DATA["id_number"]))<3: return {'status': 'error', 'message': 'ID Number cannot be negative'}, 400
+    if int(len(JSON_DATA["organization"]))<3: return {'status': 'error', 'message': 'Organization cannot be negative'}, 400
+    step1=dbops.getters.get_specific_user_data(JSON_DATA["email"],JSON_DATA["id_number"],JSON_DATA["organization"])
+    if step1:
+        return {'status': 'success', 'data': step1}, 200
+    return {'status': 'error', 'message': 'No users found'}, 400
+
 ####################### Admin Endpoints ############################
 @app.route('/api/v1/admin/books/register', methods=['POST'])
 def register_book():
@@ -210,6 +228,7 @@ def get_specific_user_details_with_books_rented():
     return {'status': 'error', 'message': 'No users found'}, 400
 
 
+
 @app.route('/api/v1/admin/get_book_tags', methods=['GET'])
 def get_book_tags():
     UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
@@ -229,6 +248,9 @@ def get_book_tags():
 def admin_return_book():
     pass
 
+@app.route('/api/v1/normal/return_books', methods=['POST'])
+def normal_return_book():
+    pass
 
 
 #################### End Admin Endpoints ##########################
