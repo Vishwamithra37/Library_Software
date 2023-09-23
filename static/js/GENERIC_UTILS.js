@@ -105,6 +105,17 @@ class GENERIC_META_CALL {
         // Generally varies from 0 to 82%.
         return Math.round((scrolledAmount / totalHeight) * 100);
     }
+    normal_select_dropdown(classer, options) {
+        let select = document.createElement('select');
+        $(select).addClass(classer);
+        let len_of_options = options.length;
+        for (let i = 0; i < len_of_options; i++) {
+            let option = document.createElement('option');
+            $(option).text(options[i]);
+            $(select).append(option);
+        }
+        return select;
+    }
     search_bar_dropdown(total_max_height, search_bar_class, search_bar_place_holder, search_bar_dropdown_class) {
         let wrapper_div = document.createElement('div');
         $(wrapper_div).addClass('' + total_max_height);

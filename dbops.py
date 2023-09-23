@@ -35,12 +35,58 @@ def hash512(sstr: str):
 
 
 class inserts:
-    def rent_book(book_id: str, user_id: str, authorizer_object, rentedfor: str):
-        """Returns True if the book was rented successfully\n
-
+    def return_book(unique_book_id: str, user_id: str, authorizer_object):
+        """Returns True if the book was returned successfully\n
         Keyword arguments:\n
-        book_id -- the book id (String)\n
+        unique_book_id -- the book id (String)\n
         user_id -- the user id (String)\n
+        authoriser_object -- the authoriser session object\n
+        Returns:\n
+        False -- if the book could not be returned (Boolean)\n
+        True -- if the book was returned successfully (Boolean)\n
+        Description:\n
+        The idea is to mark the book as returned by pushing the rent object into 
+        another collection called records and then deleting it from the rents collection.
+        The next step is to then update the metadata of the book and the user- Such as penality if any
+        and the number of books rented by the user.
+        """
+        dac = dab["BOOKS"]
+        dac1=dab["USERS"]
+        dac2=dab["RENTS"]
+        dac3=dab["RENT_RECORDS"]
+        book_object=dac.find_one({"_id":ObjectId(unique_book_id)})
+        user_object=dac1.find_one({"_id":ObjectId(user_id)})
+        authoriser_user_object=authorizer_object
+        # ################### If none of the objects exist ###################
+        if not book_object or book_object["status"]!="Rented" or not user_object or not authoriser_user_object:
+            return False
+        # ################### End If none of the objects exist ###################
+        rent_object=dac2.find_one({"book_id":unique_book_id,"user_id":user_id,"status":"Rented"})
+        # ################### If the user has not rented the book ###################
+        if not rent_object:
+            return False
+        # ################### End If the user has not rented the book ###################
+        # ################### Insertion and Update ###################
+        dac2.delete_one({"book_id":unique_book_id,"user_id":user_id,"status":"Rented"})
+        book_update={"$inc":{"noofcopies_available_currently":1,"noofcopies_rented_currently":-1}}
+        if book_object["noofcopies_rented_currently"]==1:
+            book_update["$set"]={"status":"Available"}
+        dac.update_one({"_id":ObjectId(unique_book_id)},book_update)
+        dac1.update_one({"_id":ObjectId(user_id)},{"$inc":{          # Incrementing the number of books rented by the user. Purely for statistics.
+                                                           "Library.Number_of_books_rented_currently":-1,
+                                                           }})
+        # ################## End Insertion and Update #################
+        return True
+
+        
+
+
+
+    def rent_book(common_book_details, unique_book_details,unique_book_id, user_id: str, authorizer_object, rentedfor: str):
+        """Returns True if the book was rented successfully\n
+        Keyword arguments:\n
+        common_book_details -- dict\n
+        \n
         authoriser_id -- the authoriser id (String)\n
         rentedfor -- the duration for which the book is rented-In Days (String)\n
         Returns:\n
@@ -50,15 +96,15 @@ class inserts:
         dac = dab["BOOKS"]
         dac1=dab["USERS"]
         dac2=dab["RENTS"]
-        book_object=dac.find_one({"_id":ObjectId(book_id)})
+        dac3=dab["UNIQUE_BOOK_IDS"]
         user_object=dac1.find_one({"_id":ObjectId(user_id)})
         authoriser_user_object=authorizer_object
         # ################### If none of the objects exist ###################
-        if not book_object or book_object["status"]!="Available" or not user_object or not authoriser_user_object:
+        if  unique_book_details["status"]!="Available" or not user_object or not authoriser_user_object:
             return False
         # ################### End If none of the objects exist ###################
         rent_object={
-            "book_id":book_id,
+            "unique_book_id":unique_book_id,
             "user_id":user_id,
             "authoriser_email":authoriser_user_object["email"],
             "timestamp":str(datetime.datetime.now()),
@@ -66,23 +112,23 @@ class inserts:
             "rentedfor": rentedfor
         }
         # ################### If the user has already rented the book ###################
-        if dac2.find_one({"book_id":book_id,"user_id":user_id,"status":"Rented"}):
+        if dac2.find_one({"unique_book_id":unique_book_id,"user_id":user_id,"status":"Rented"}):
             return False
-        #  To negate this, one needs to either mark the old rent as returned or delete it from the database.
-        # ################### End If the user has already rented the book ###################
-
-        # ################### Insertion and Update ###################
         dac2.insert_one(rent_object)
+        # ################### End If the user has already rented the book ###################
         book_update={"$inc":{"noofcopies_available_currently":-1,"noofcopies_rented_currently":1,"nooftimes_rented":1}}
-        if book_object["noofcopies_available_currently"]==1:
+        if common_book_details["noofcopies_available_currently"]==1:
             book_update["$set"]={"status":"Rented"}
-        dac.update_one({"_id":ObjectId(book_id)},book_update)
+        dac.update_one({"_id":ObjectId(str(unique_book_details["BOOK_ID"]))},book_update)
         dac1.update_one({"_id":ObjectId(user_id)},{"$inc":{          # Incrementing the number of books rented by the user. Purely for statistics.
                                                            "Library.Number_of_books_rented_currently":1,
                                                            "Library.Total_Number_of_books_rented":1,
                                                            }})
+        dac3.update_one({"_id":ObjectId(unique_book_id)},{"$set":{"status":"Rented"},"$inc":{"nooftimes_rented":1}})
         # ################## End Insertion and Update #################
         return True
+    
+
     
     def register_new_user(user_Object: dict, useremail: str):
         """Returns True if the user was registered successfully
@@ -127,8 +173,16 @@ class inserts:
         True -- if the book was registered successfully (Boolean)
         """
         dac = dab["BOOKS"]
+        dac2=dab["UNIQUE_BOOK_IDS"]
         book_Object["timestamp"]=str(datetime.datetime.utcnow())
         v1 = dac.insert_one(book_Object)
+        book_Object["BOOK_ID"]=str(v1.inserted_id)
+        del book_Object["_id"]
+        del book_Object["noofcopies_available_currently"]
+        del book_Object["noofcopies_rented_currently"]
+        for i in range(int(book_Object["noofcopies"])):
+            dac2.insert_one(book_Object)
+            del book_Object["_id"]
         if v1.acknowledged:
             return True
         return False
@@ -150,6 +204,23 @@ class inserts:
         return True
     
 class getters:
+    def get_unique_book_ids(book_id: str,organization:str):
+        """ Returns the unique book ids if the book_id is valid
+        
+        Keyword arguments:
+        book_id -- the book id (String)
+        Returns:
+        False -- if the book_id is invalid (Boolean)
+        book -- if the book_id is valid (Dictionary)
+        """
+        dac = dab["UNIQUE_BOOK_IDS"]
+        v1 = dac.find({"BOOK_ID":book_id,"organization":organization},{"_id":1})
+        all_unique_book_ids=[]
+        if v1:
+            for i in v1:
+                all_unique_book_ids.append(str(i["_id"]))
+            return all_unique_book_ids
+        return False
 
     def get_specific_book_details(book_id: str,organization:str):
         """ Returns the book object if the book_id is valid
@@ -165,6 +236,22 @@ class getters:
         if v1:
             return v1
         return False
+    
+    def get_specific_book_details_by_unique_id(unique_book_id: str,organization:str):
+        """ Returns the unique book object by unique book id if the book_id is valid
+        Keyword arguments:
+        unique_book_id -- the book id (String)
+        organization -- the organization (String)
+        Returns:
+        False -- if the book_id is invalid (Boolean)
+        book -- if the book_id is valid (Dictionary)
+        """
+        dac = dab["UNIQUE_BOOK_IDS"]
+        v1 = dac.find_one({"_id":ObjectId(unique_book_id),"organization":organization},{"_id":0})
+        if v1:
+            return v1
+        return False
+
     def get_user_by_credentials(user_Object: dict):
         """ Returns the user object if the credentials are valid
             
@@ -304,7 +391,7 @@ class getters:
             return v1[parameter_name]
         return False
 
-    def get_user_list(search_string:str, skip: int=0, limit: int=10,returner:dict={}):
+    def get_user_list(search_string:str, skip: int=0, limit: int=10,returner:dict={},organization:str=""):
         """ Returns a list of users
         
         Keyword arguments:
@@ -320,7 +407,8 @@ class getters:
             "$or":[
                 {"username":{"$regex":search_string,"$options":"i"}},
                 {"email":{"$regex":search_string,"$options":"i"}},
-            ]
+            ],
+            "organization":organization
         }
         v1 = dac.find(fil,returner).skip(skip).limit(limit)
         
