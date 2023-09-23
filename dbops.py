@@ -151,6 +151,20 @@ class inserts:
     
 class getters:
 
+    def get_specific_book_details(book_id: str,organization:str):
+        """ Returns the book object if the book_id is valid
+        
+        Keyword arguments:
+        book_id -- the book id (String)
+        Returns:
+        False -- if the book_id is invalid (Boolean)
+        book -- if the book_id is valid (Dictionary)
+        """
+        dac = dab["BOOKS"]
+        v1 = dac.find_one({"_id":ObjectId(book_id),"organization":organization},{"_id":0})
+        if v1:
+            return v1
+        return False
     def get_user_by_credentials(user_Object: dict):
         """ Returns the user object if the credentials are valid
             

@@ -127,17 +127,22 @@ $(document).ready(function () {
                         "p-2 text-gray-400 bg- hover:text-black w-full text-right font-bold text-sm rounded  focus:outline-none focus:shadow-outline",
                         "Cancel"
                     )
-                    let stoper0 = new GENERIC_META_CALL().Generic_div('h-auto w-auto', '');
-                    let stoper1 = new GENERIC_META_CALL().Generic_div('h-auto flex flex-col overflow-x-auto', '');
-                    let col_holder = new GENERIC_META_CALL().Generic_div('h-auto max-w-fit p-2 ml-2 flex flex-col overflow-x-auto bg-white', '');
-
+                    let stoper0 = new GENERIC_META_CALL().Generic_div('h-auto max-w-3xl ml-2', '');
+                    let stoper1 = new GENERIC_META_CALL().Generic_div('max-h-96 max-w-3xl flex flex-col overflow-x-auto ', '');
+                    let col_holder = new GENERIC_META_CALL().Generic_div('h-auto max-w-fit ml-2 bg-green-500 flex flex-col overflow-x-auto bg-white', '');
+                    let float_actions = new dashboard_page_cards().scanner_action_card(stoper0, stoper1);
                     let stoper2 = new GENERIC_META_CALL().Generic_put_it_in_flex_col("flex flex-col", [cancel_button, scanner_div]);
-                    let floater = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater([stoper2]);
+                    let stoper3 = new GENERIC_META_CALL().Generic_div('h-auto w-auto', '');
+                    let floater = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater([stoper2, float_actions]);
                     $(stoper0).attr('data-div_type', 'user_card_placeholder');
-                    $(stoper1).attr('data-div_type', 'book_card_placeholder');
+                    $(stoper1).attr('data-div_type', 'book_card_placeholder').attr('data-unique_book_id_array', '[]')
+
                     $(col_holder).append(stoper1);
                     $(col_holder).append(stoper0);
                     $(floater).append(col_holder);
+
+
+
 
 
                     $(floater).children().removeClass('h-5/6').addClass('h-auto overflow-y-auto');
@@ -156,15 +161,18 @@ $(document).ready(function () {
 
                     let config = {
                         fps: 10,
-                        // qrbox: { width: 100, height: 100 },
+                        qrbox: { width: 250, height: 250 },
                         rememberLastUsedCamera: true,
+                        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                         // Only support camera scan type.
                         supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
                     };
                     let html5QrCode = new Html5Qrcode("scanner_div", config);
                     html5QrCode.start(
+
                         { facingMode: "environment" },
-                        { fps: 10 },
+                        { fps: 45 },
+
                         onScanSuccess
                     ).catch(err => {
                         console.log(err);
@@ -172,6 +180,7 @@ $(document).ready(function () {
                     );
                     function onScanSuccess(decodedText, decodedResult) {
                         // handle the scanned code as you like, for example:
+                        console.log(`Code matched = ${decodedText}`, decodedResult);
                         let pure_string = JSON.parse(decodedText)
                         let final_string = JSON.parse(pure_string)
                         console.log(final_string);
@@ -179,7 +188,25 @@ $(document).ready(function () {
                         // If it contains the keys: Book_id, Organization and card_type as "Book_card" then it is a valid card and we can proceed to the next step.
                         if (final_string['card_type'] == "Book_card" && Object.keys(final_string).includes('Book_id') && Object.keys(final_string).includes('Organization')) {
                             console.log("Book card detected");
+                            let book_detail_getter = new GENERIC_APICALLS().GenericAPIJSON_CALL(
+                                '/api/v1/admin/books/get_book_details',
+                                'POST',
+                                JSON.stringify({ "book_id": final_string['Book_id'], "organization": final_string['Organization'], "unique_book_id": final_string["unique_book_id"] })
+                            ).then(function (response) {
+                                let book_data = response['data'];
+                                let unique_book_array = $(floater).find('[data-div_type="book_card_placeholder"]').attr('data-unique_book_id_array');
+                                unique_book_array = JSON.parse(unique_book_array);
+                                let index = unique_book_array.indexOf(final_string['unique_book_id']);
+                                if (index > -1) {
+                                    // Break the function.
+                                    return;
 
+                                }
+                                unique_book_array.push(final_string['unique_book_id']);
+                                $(floater).find('[data-div_type="book_card_placeholder"]').attr('data-unique_book_id_array', JSON.stringify(unique_book_array));
+                                let book_card = new dashboard_page_cards().book_info_div_for_rent_card(book_data);
+                                $(floater).find('[data-div_type="book_card_placeholder"]').append(book_card);
+                            });
                         }
                         if (final_string['card_type'] == "Identity_card" && Object.keys(final_string).includes('User_id') && Object.keys(final_string).includes('Organization')) {
                             console.log("User card detected");
@@ -192,7 +219,7 @@ $(document).ready(function () {
                                 let user_data = response['data'];
                                 let user_card = new dashboard_page_cards().user_info_div_for_rent_card(user_data);
                                 $(user_card).attr('data-div_type', 'user_card_placeholder')
-
+                                $(user_card).attr('data-user_data', JSON.stringify(user_data));
                                 $(floater).find('[data-div_type="user_card_placeholder"]').replaceWith(user_card);
                             });
                         }
@@ -863,11 +890,54 @@ class dashboard_page_cards {
             )
             $(Book_tags).append(Book_tag);
         }
+
+        let number_of_times_book_has_been_rented_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Number of times book has been rented: "
+        );
+        let number_of_times_book_has_been_rented_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            book_data['nooftimesrented']
+        );
+
         $(wrapper_div).append(book_title_label);
         $(wrapper_div).append(book_title_value);
         $(wrapper_div).append(book_author_label);
         $(wrapper_div).append(book_author_value);
         $(wrapper_div).append(Book_tags);
+        return wrapper_div;
+    }
+    scanner_action_card(book_data, user_data) {
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let number_of_days_to_be_rented_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Number of days to be rented: "
+        );
+        let number_of_days_to_be_rented_input = new GENERIC_META_CALL().Generic_input(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Number of days",
+            7
+        )
+        number_of_days_to_be_rented_input.setAttribute('type', 'number');
+        number_of_days_to_be_rented_input.setAttribute('min', '1');
+
+        let rent_button = new GENERIC_META_CALL().Generic_button(
+            "bg-blue-500 mt-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
+            "Rent"
+        )
+        let return_button = new GENERIC_META_CALL().Generic_button(
+            "bg-green-500 mt-2 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
+            "Return"
+        )
+
+        $(wrapper_div).append(number_of_days_to_be_rented_label);
+        $(wrapper_div).append(number_of_days_to_be_rented_input);
+        $(wrapper_div).append(rent_button);
+        $(wrapper_div).append(return_button);
+
         return wrapper_div;
     }
 }

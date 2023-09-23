@@ -136,6 +136,25 @@ def get_specific_user_list():
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No users found'}, 400
 
+@app.route('/api/v1/admin/books/get_book_details', methods=['POST'])
+def get_specific_book_details():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error', 'message': 'Invalid token'}, 400
+    if not "get_specific_book_details" in UserDetails["permissions"]:
+        return {'status': 'error', 'message': 'You do not have permission to get book details'}, 400
+    JSON_DATA = flask.request.get_json()
+    print(JSON_DATA)
+    if JSON_DATA.keys() != {"book_id","organization","unique_book_id"}: return {'status': 'error', 'message': 'Missing keys'}, 400 
+    if int(len(JSON_DATA["book_id"]))<3: return {'status': 'error', 'message': 'Book ID cannot be negative'}, 400
+    if int(len(JSON_DATA["organization"]))<3: return {'status': 'error', 'message': 'Organization cannot be negative'}, 400
+    if int(len(JSON_DATA["unique_book_id"]))<3: return {'status': 'error', 'message': 'Unique ID cannot be negative'}, 400
+    step1=dbops.getters.get_specific_book_details(JSON_DATA["book_id"],JSON_DATA["organization"])
+    if step1:
+        return {'status': 'success', 'data': step1}, 200
+    return {'status': 'error', 'message': 'No book found'}, 400
+    
+
 ####################### Admin Endpoints ############################
 @app.route('/api/v1/admin/books/register', methods=['POST'])
 def register_book():
@@ -163,6 +182,7 @@ def register_book():
     Flask_JSON["noofcopies_rented_currently"]=0 # This is the number of copies currently rented.
     Flask_JSON["nooftimes_rented"]=0 # This is the number of times the book has been rented. Purely for statistics.
     Flask_JSON["tags"]=Flask_JSON["tags"] # This is a list of tags for the book. This is used for searching.
+    Flask_JSON["organization"]=UserDetails["organization"] # This is the organization the book belongs to.
     check_if_same_book_exists=dbops.getters.get_book_by_parameter("title",Flask_JSON["title"])
     if check_if_same_book_exists: return {'status': 'error', 'message': 'Book already exists'}, 400
     if Flask_JSON["isbn"]!="000": 
