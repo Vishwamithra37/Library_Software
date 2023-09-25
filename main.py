@@ -177,6 +177,25 @@ def get_unique_book_ids():
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No book found'}, 400
+@app.route('/api/v1/admin/books/returns/get_unique_book_ids', methods=['POST'])
+def get_unique_book_ids_returns():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return flask.redirect(flask.url_for('login_page'))
+    if not "get_unique_book_ids_returns" in UserDetails["permissions"]:
+        return flask.redirect(flask.url_for('login_page'))
+    JSON_DATA = flask.request.get_json()
+    print(JSON_DATA)
+    if JSON_DATA.keys() != {"user_id","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
+    if int(len(JSON_DATA["user_id"]))<3: return {'status': 'error', 'message': 'User ID cannot be negative'}, 400
+    if JSON_DATA["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+
+    step1=dbops.getters.get_unique_book_ids_returns(JSON_DATA["user_id"],JSON_DATA["organization"])
+    if step1:
+        return {'status': 'success', 'data': step1}, 200
+    return {'status': 'error', 'message': 'No book found'}, 400
+    
+
 
 ####################### Admin Endpoints ############################
 @app.route('/api/v1/admin/books/register', methods=['POST'])
@@ -252,7 +271,7 @@ def admin_rent_book():
     common_book_details=dbops.getters.get_specific_book_details(unique_book_details["BOOK_ID"],Flask_JSON["organization"])
     if not unique_book_details: return {'status': 'error', 'message': 'Invalid unique book ID'}, 400
     if not common_book_details: return {'status': 'error', 'message': 'Invalid book ID'}, 400
-    step1= dbops.inserts.rent_book(common_book_details,unique_book_details,Flask_JSON["unique_book_id"], Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"])
+    step1= dbops.inserts.rent_book(common_book_details,unique_book_details,Flask_JSON["unique_book_id"], Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"],Flask_JSON["organization"])
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Conditions to rent not met. Please check the number of books available or if it is already rented to the said user.'}, 500
@@ -294,23 +313,25 @@ def get_book_tags():
         return {'status': 'success', 'options': book_tag_parameters}, 200
     return {'status': 'success', 'options': []}, 200
 
-@app.route('/api/v1/admin/return_books', methods=['POST'])
+@app.route('/api/v1/admin/return_book', methods=['POST'])
 def admin_return_book():
     UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
     if not UserDetails:
         return {'status': 'error', 'message': 'Invalid token'}, 400
     if not "admin_return_book" in UserDetails["permissions"]:
-        print(UserDetails["permissions"])
         return {'status': 'error', 'message': 'You do not have permission to return books'}, 400
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
-    expected_keys = ['unique_book_id', 'user_id']
+    expected_keys = ['unique_book_id', 'user_id','organization']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
         return {'status': 'error', 'message': 'Missing keys'}, 400
     if 200<len(Flask_JSON['unique_book_id']) < 2: return {'status': 'error', 'message': 'Unique Book ID too short'}, 400
     if 200<len(Flask_JSON['user_id']) < 2: return {'status': 'error', 'message': 'User ID too short'}, 400
+    if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
     ################## End Validation #################
-    step1= dbops.inserts.return_book(Flask_JSON["unique_book_id"], Flask_JSON["user_id"], UserDetails)
+    unique_book_object=dbops.getters.get_specific_book_details_by_unique_id(Flask_JSON["unique_book_id"],Flask_JSON["organization"])
+    if not unique_book_object: return {'status': 'error', 'message': 'Invalid unique book ID'}, 400
+    step1= dbops.inserts.return_book(Flask_JSON["unique_book_id"], Flask_JSON["user_id"], Flask_JSON["organization"], unique_book_object)
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Conditions to return not met. Please check the number of books available or if it is already rented to the said user.'}, 500
@@ -331,15 +352,15 @@ def get_book_list():
         print(UserDetails["permissions"])
         return {'status': 'error', 'message': 'You do not have permission to get book list'}, 400
     JSON_DATA = flask.request.get_json()
-    if JSON_DATA.keys() != {"skip","limit","special_filter"}: return {'status': 'error', 'message': 'Missing keys'}, 400
+    if JSON_DATA.keys() != {"skip","limit","special_filter","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
     skip=JSON_DATA["skip"]
     limit=JSON_DATA["limit"]
     ##################################################################################################################SCARY BUG ALERT####################################################################################################
-
+    if JSON_DATA["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
     ##################################################################################################################SCARY BUG ALERT####################################################################################################
     if int(skip)<0: return {'status': 'error', 'message': 'Skip cannot be negative'}, 400
     if int(limit)<0: return {'status': 'error', 'message': 'Limit cannot be negative'}, 400
-    step1=dbops.getters.get_book_list(skip,limit)
+    step1=dbops.getters.get_book_list(skip,limit,JSON_DATA["organization"])
     # special_step=dbops.getters.get_book_list_special(special_filter)
     if step1:
         return {'status': 'success', 'data': step1}, 200
@@ -356,7 +377,7 @@ def get_book_list_special_filter():
         print(UserDetails["permissions"])
         return {'status': 'error', 'message': 'You do not have permission to get book list'}, 400
     JSON_DATA = flask.request.get_json()
-    if JSON_DATA.keys() != {"skip","limit","special_filter"}: return {'status': 'error', 'message': 'Missing keys'}, 400
+    if JSON_DATA.keys() != {"skip","limit","special_filter","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
     skip=JSON_DATA["skip"]
     limit=JSON_DATA["limit"]
     ##################################################################################################################SCARY BUG ALERT####################################################################################################
@@ -365,6 +386,7 @@ def get_book_list_special_filter():
     if int(len(special_filter["generic"]))<1: return {'status': 'error', 'message': 'Generic cannot be negative'}, 400
     if special_filter["time"] not in ["asc","desc"]: return {'status': 'error', 'message': 'Time cannot be negative'}, 400
     if special_filter["status"] not in ["Available","Rented","All"]: return {'status': 'error', 'message': 'Status cannot be negative'}, 400
+    if JSON_DATA["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
     ##################################################################################################################SCARY BUG ALERT####################################################################################################
     if int(skip)<0: return {'status': 'error', 'message': 'Skip cannot be negative'}, 400
     if int(limit)<0: return {'status': 'error', 'message': 'Limit cannot be negative'}, 400
@@ -377,6 +399,7 @@ def get_book_list_special_filter():
         special_filter["search_string"],    
         special_filter["generic"],
         special_filter["tags"],
+        JSON_DATA["organization"],
     )
     if step1:
         return {'status': 'success', 'data': step1}, 200

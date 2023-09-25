@@ -32,57 +32,80 @@ def hash512(sstr: str):
     hasher.update(sstr.encode('utf-8'))
     return hasher.finalize().hex()
 
+class math_operations:
+    def calculate_penality(rent_object:dict):
+        current_time=datetime.datetime.now()
+        time_of_rent=datetime.datetime.strptime(rent_object["timestamp"],"%Y-%m-%d %H:%M:%S.%f")
+        time_difference_in_days=(current_time-time_of_rent).days
+        Library_params=getters.config_organization_libary_parrameters(rent_object["organization"])
+        day_penality=Library_params["Day_Penality"]
+        month_penality=Library_params["Month_Penality"]
+        year_penality=Library_params["Year_Penality"]
 
+        if time_difference_in_days<=int(rent_object["rentedfor"]):
+            return 0
+        else:
+            if time_difference_in_days<=30:
+                return (time_difference_in_days-int(rent_object["rentedfor"]))*day_penality
+            elif time_difference_in_days<=365:
+                # The penality is cumulative. That is if the book is overdue by 2 months and 10 days, the penality is calculated as 2*month_penality+70*day_penality.
+                return (time_difference_in_days-int(rent_object["rentedfor"]))*day_penality+(time_difference_in_days//30)*month_penality
+            else:
+                return (time_difference_in_days-int(rent_object["rentedfor"]))*day_penality+(time_difference_in_days//30)*month_penality+(time_difference_in_days//365)*year_penality
+        
 
 class inserts:
-    def return_book(unique_book_id: str, user_id: str, authorizer_object):
+    def return_book(unique_book_id: str, user_id: str, organization:str,Unique_book_object:dict):
         """Returns True if the book was returned successfully\n
-        Keyword arguments:\n
-        unique_book_id -- the book id (String)\n
-        user_id -- the user id (String)\n
-        authoriser_object -- the authoriser session object\n
-        Returns:\n
-        False -- if the book could not be returned (Boolean)\n
-        True -- if the book was returned successfully (Boolean)\n
-        Description:\n
-        The idea is to mark the book as returned by pushing the rent object into 
-        another collection called records and then deleting it from the rents collection.
-        The next step is to then update the metadata of the book and the user- Such as penality if any
-        and the number of books rented by the user.
         """
         dac = dab["BOOKS"]
-        dac1=dab["USERS"]
+        dac1=dab["RENT_RECORDS"]
         dac2=dab["RENTS"]
-        dac3=dab["RENT_RECORDS"]
-        book_object=dac.find_one({"_id":ObjectId(unique_book_id)})
-        user_object=dac1.find_one({"_id":ObjectId(user_id)})
-        authoriser_user_object=authorizer_object
-        # ################### If none of the objects exist ###################
-        if not book_object or book_object["status"]!="Rented" or not user_object or not authoriser_user_object:
-            return False
-        # ################### End If none of the objects exist ###################
-        rent_object=dac2.find_one({"book_id":unique_book_id,"user_id":user_id,"status":"Rented"})
-        # ################### If the user has not rented the book ###################
+        dac3=dab["USERS"]
+        dac4=dab["UNIQUE_BOOK_IDS"]
+        ### Step 1 is check if the rent object exists. That is if the user really rented the book.
+        fil={
+            "unique_book_id":unique_book_id,
+            "user_id":user_id,
+            "organization":organization,
+            "status":"Rented"
+        }
+        rent_object=dac2.find_one(fil)
         if not rent_object:
             return False
-        # ################### End If the user has not rented the book ###################
-        # ################### Insertion and Update ###################
-        dac2.delete_one({"book_id":unique_book_id,"user_id":user_id,"status":"Rented"})
-        book_update={"$inc":{"noofcopies_available_currently":1,"noofcopies_rented_currently":-1}}
-        if book_object["noofcopies_rented_currently"]==1:
-            book_update["$set"]={"status":"Available"}
-        dac.update_one({"_id":ObjectId(unique_book_id)},book_update)
-        dac1.update_one({"_id":ObjectId(user_id)},{"$inc":{          # Incrementing the number of books rented by the user. Purely for statistics.
-                                                           "Library.Number_of_books_rented_currently":-1,
-                                                           }})
-        # ################## End Insertion and Update #################
+        ### Step 2 is to calculate the penality if any.
+        penality=math_operations.calculate_penality(rent_object)
+        ### Step 3 pass the rent object to the rent records. Update the user object with the penality and the book and unique book object with the return.
+        rent_object["penality"]=penality
+        rent_object["status"]="Returned"
+        add_overdue_count=0
+        if penality:
+            add_overdue_count=1
+
+        dac1.insert_one(rent_object)
+        dac3.update_one({"_id":ObjectId(user_id)},{"$inc":{          # Incrementing the number of books rented by the user. Purely for statistics.
+                                                              "Library."+organization+".Number_of_books_rented_currently":-1,
+                                                              "Library."+organization+".Number_of_books_returned":1,
+                                                              "Library."+organization+".Number_of_times_overdue":add_overdue_count,
+                                                              "Library."+organization+".Total_fine_amount":penality,
+                                                              }})
+        dac4.update_one({"_id":ObjectId(unique_book_id)},{"$set":{"status":"Available","Last_returned":str(datetime.datetime.now())}})
+        dac2.delete_one(fil)
+        dac.update_one({"_id":ObjectId(Unique_book_object["BOOK_ID"])},{"$inc":{"noofcopies_available_currently":1,"noofcopies_rented_currently":-1}})
+        ###### Step4 return True
         return True
+
+        
+
+        
+
+        pass 
 
         
 
 
 
-    def rent_book(common_book_details, unique_book_details,unique_book_id, user_id: str, authorizer_object, rentedfor: str):
+    def rent_book(common_book_details, unique_book_details,unique_book_id, user_id: str, authorizer_object, rentedfor: str,organizaiton):
         """Returns True if the book was rented successfully\n
         Keyword arguments:\n
         common_book_details -- dict\n
@@ -109,7 +132,9 @@ class inserts:
             "authoriser_email":authoriser_user_object["email"],
             "timestamp":str(datetime.datetime.now()),
             "status":"Rented",
-            "rentedfor": rentedfor
+            "rentedfor": rentedfor,
+            "organization":organizaiton
+
         }
         # ################### If the user has already rented the book ###################
         if dac2.find_one({"unique_book_id":unique_book_id,"user_id":user_id,"status":"Rented"}):
@@ -121,8 +146,8 @@ class inserts:
             book_update["$set"]={"status":"Rented"}
         dac.update_one({"_id":ObjectId(str(unique_book_details["BOOK_ID"]))},book_update)
         dac1.update_one({"_id":ObjectId(user_id)},{"$inc":{          # Incrementing the number of books rented by the user. Purely for statistics.
-                                                           "Library.Number_of_books_rented_currently":1,
-                                                           "Library.Total_Number_of_books_rented":1,
+                                                           "Library."+organizaiton+".Number_of_books_rented_currently":1,
+                                                           "Library."+organizaiton+".Total_Number_of_books_rented":1,
                                                            }})
         dac3.update_one({"_id":ObjectId(unique_book_id)},{"$set":{"status":"Rented"},"$inc":{"nooftimes_rented":1}})
         # ################## End Insertion and Update #################
@@ -204,6 +229,20 @@ class inserts:
         return True
     
 class getters:
+    def config_organization_libary_parrameters(organization:str):
+        """Returns the library parameters for the organization
+
+        Keyword arguments:
+        organization -- the organization name
+        Returns:
+        False -- if the organization is invalid (Boolean)
+        True -- if the organization is valid (Boolean)
+        """
+        dac = dab["CONFIGS"]
+        v1 = dac.find_one({"Config_Name":"Library_Parameters"},{"_id":0,organization:1})
+        if v1:
+            return v1[organization]
+        return False
     def get_unique_book_ids(book_id: str,organization:str):
         """ Returns the unique book ids if the book_id is valid
         
@@ -214,11 +253,28 @@ class getters:
         book -- if the book_id is valid (Dictionary)
         """
         dac = dab["UNIQUE_BOOK_IDS"]
-        v1 = dac.find({"BOOK_ID":book_id,"organization":organization},{"_id":1})
+        v1 = dac.find({"BOOK_ID":book_id,"organization":organization,"status":"Available"},{"_id":1})
         all_unique_book_ids=[]
         if v1:
             for i in v1:
                 all_unique_book_ids.append(str(i["_id"]))
+            return all_unique_book_ids
+        return False
+    def get_unique_book_ids_returns(user_id: str,organization:str):
+        """ Returns the unique book ids if the book_id is valid
+        
+        Keyword arguments:
+        book_id -- the book id (String)
+        Returns:
+        False -- if the book_id is invalid (Boolean)
+        book -- if the book_id is valid (Dictionary)
+        """
+        dac = dab["RENTS"]
+        v1 = dac.find({"user_id":user_id,"organization":organization,"status":"Rented"},{"_id":0,"unique_book_id":1})
+        all_unique_book_ids=[]
+        if v1:
+            for i in v1:
+                all_unique_book_ids.append(str(i["unique_book_id"]))
             return all_unique_book_ids
         return False
 
@@ -286,7 +342,7 @@ class getters:
             return v1
         return False
     
-    def get_book_list(skip: int=0, limit: int=0):
+    def get_book_list(skip: int=0, limit: int=0,organization=""):
         """ Returns a list of books
         Keyword arguments:
         skip -- the number of books to skip (Integer)
@@ -296,7 +352,7 @@ class getters:
         all_books_list -- if the skip and limit are valid (list of dictionaries)
         """
         dac = dab["BOOKS"]
-        v1 = dac.find({}).skip(skip).limit(limit)
+        v1 = dac.find({"organization":organization}).skip(skip).limit(limit)
         all_books_list=[]
         for i in v1:
             i["sid"]=str(i["_id"])
@@ -306,7 +362,7 @@ class getters:
             return all_books_list
         return False
     
-    def get_book_list_special(skip: int=0, limit: int=0,returner:dict={},sorting_order=-1,search_string=0,generic=[],tags=[]):
+    def get_book_list_special(skip: int=0, limit: int=0,returner:dict={},sorting_order=-1,search_string=0,generic=[],tags=[],organization=""):
         """ Returns a list of books
         Keyword arguments:
         skip -- the number of books to skip (Integer)
@@ -321,7 +377,9 @@ class getters:
         all_books_list -- if the skip and limit are valid (list of dictionaries)
         """ 
         dac = dab["BOOKS"]
-        fil={}
+        fil={
+            "organization":organization
+        }
         if search_string:
             fil={
                 "$or":[
@@ -329,7 +387,9 @@ class getters:
                     {"author":{"$regex":search_string,"$options":"i"}},
                     {"description":{"$regex":search_string,"$options":"i"}},
                     {"tags":{"$regex":search_string,"$options":"i"}},
-                ]
+                ],
+                "organization":organization
+
             }
         # if generic:
         #     # Alphabetical search.

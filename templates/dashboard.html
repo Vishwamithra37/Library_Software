@@ -63,10 +63,23 @@
                 <span>Clear Filters</span>
             </div>
 
-            <div id="return_book"
+            <div id="scanner"
                 class="w-full p-2 mt-2 bg-green-300 hover:bg-green-400 text-black font-semibold shadow-lg text-center cursor-pointer">
                 <span>Scanner</span>
             </div>
+            <div id="return_book"
+                class="w-full p-2 mt-2 bg-blue-300 hover:bg-blue-400 text-black font-semibold shadow-lg text-center cursor-pointer">
+                <span>Return Book</span>
+            </div>
+
+            <select id="current_user_organization"
+                class="w-full p-2 mt-10 bg-violet-200 hover:bg-violet-300 text-black font-semibold shadow-lg text-center cursor-pointer select-none">
+                {% for organization in Organizations %}
+                <option value="{{ organization }}">{{ organization }}</option>
+                {% endfor %}
+
+            </select>
+
         </div>
 
 
@@ -76,7 +89,6 @@
             <div class="w-full h-full flex flex-col overflow-y-auto">
                 <div class="w-full p-2 text-base h-11 border-b-2 border-gray-200 shadow-lg flex flex-row justify-end">
                     <span class="mr-auto float-left">Total Books: <span id="statistics_total_books">0</span></span>
-
                     <span class="mr-2 pr-2 border-r-2 border-gray-200">Users: <span
                             id="statistics_total_users">0</span></span>
                     <span class="mr-2 pr-2 border-r-2 border-gray-200">borrowed📖: <span

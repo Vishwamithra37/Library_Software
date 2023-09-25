@@ -1,7 +1,17 @@
+
 $(document).ready(function () {
+
     $('#register_new_book').click(function () {
         let k1 = new dashboard_page_cards().register_new_book_div();
         $('body').append(k1);
+    });
+    $('#return_book').click(function () {
+        let k1 = new dashboard_page_cards().return_button_card();
+        let floating_k1 = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater(k1[0]);
+        $('body').append(floating_k1);
+        $(k1[1]).click(function () {
+            $(floating_k1).remove();
+        });
     });
 });
 
@@ -74,11 +84,21 @@ $(document).ready(function () {
 
     $(filter_elem).change(function () {
         if ($(this).attr('data-tags_selected_array') != '[]') {
-
             $('#cleaner').addClass('border-red-500 border-t-2 border-b-2');
         } else {
             $('#cleaner').removeClass('border-red-500 border-2 border-t-2 border-b-2');
         }
+    });
+    $('#cleaner').click(function () {
+        $(filter_elem).attr('data-tags_selected_array', '[]');
+        // For each of the options, remove the border and the data-selected attribute.
+        $(filter_elem).children().each(function () {
+            $(this).removeClass('border-2 border-green-500');
+            $(this).attr('data-selected', 'No');
+        });
+        $('#books_box').empty();
+        new dashboard_page_API_calls().refresh_book_list(10, 0, "all");
+        $('#cleaner').removeClass('border-red-500 border-2 border-t-2 border-b-2');
     });
 
     $('#search_bar').on('input', async function (e) {
@@ -101,7 +121,8 @@ $(document).ready(function () {
 
             return;
         } else {
-            $('#books_box').empty();
+
+
             new dashboard_page_API_calls().refresh_book_list(10, 0, "all");
         }
     });
@@ -110,7 +131,7 @@ $(document).ready(function () {
 
     // Start of return book scanner section
 
-    $('#return_book').click(function () {
+    $('#scanner').click(function () {
         // Request for permission to use the camera on the device.
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             navigator.mediaDevices
@@ -249,7 +270,7 @@ class dashboard_page_cards {
         )
         let form = document.createElement('form');
         form.setAttribute('id', 'register_new_book_form');
-        form.setAttribute('class', 'w-full max-w-lg shadow-lg p-2');
+        form.setAttribute('class', 'w-full max-w-lg shadow-lg p-2 pb-0');
         form.setAttribute('action', '/api/v1/book/register');
         form.setAttribute('method', 'POST');
         form.setAttribute('enctype', 'multipart/form-data');
@@ -329,15 +350,12 @@ class dashboard_page_cards {
             "noofcopies",
             "1"
         )
-        let organization_label = new GENERIC_META_CALL().Generic_label(
-            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
-            "Organization"
-        );
         let organization_dropdown = new GENERIC_META_CALL().normal_select_dropdown(
-            "w-full shadow appearance-none w-full mt-2 p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
-            user_organizations,
+            "hidden",
+            [$('#current_user_organization').val()],
         )
         $(organization_dropdown).attr('name', 'organization')
+
         $(noofcopies_input).attr('type', 'number').attr('min', '1').attr('max', '100').attr('name', 'noofcopies')
         let form_array = [
             title_label,
@@ -352,7 +370,6 @@ class dashboard_page_cards {
             description_input,
             isbn_label,
             isbn_input,
-            organization_label,
             organization_dropdown,
             genre_label,
             genre_input,
@@ -592,13 +609,9 @@ class dashboard_page_cards {
             "Enter User Name...",
             "bg-gray-100 pb-2"
         )
-        let organization_label = new GENERIC_META_CALL().Generic_label(
-            "w-full text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
-            "Organization: "
-        );
         let organization_dropdown = new GENERIC_META_CALL().normal_select_dropdown(
-            "w-full shadow appearance-none w-full mt-2 p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
-            user_organizations,
+            "hidden",
+            [$('#current_user_organization').val()],
         )
         $(organization_dropdown).attr('name', 'organization')
         let unique_book_id_drodown_label = new GENERIC_META_CALL().Generic_label(
@@ -684,7 +697,6 @@ class dashboard_page_cards {
         $(the_renting_form).append(User_Name_search_bar[0]);
         $(the_renting_form).append(Number_of_days_label);
         $(the_renting_form).append(Number_of_days_input);
-        $(the_renting_form).append(organization_label);
         $(the_renting_form).append(organization_dropdown);
         let the_array = [
             top_label,
@@ -724,7 +736,7 @@ class dashboard_page_cards {
                     $(status).remove();
                     let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully rented book", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
                     $('body').append(status2);
-                    $(the_array[0]).remove();
+                    $(cancel_button).click()
                 }).catch(function (error) {
                     $(status).remove();
                     let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in renting book", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 1000)
@@ -736,6 +748,168 @@ class dashboard_page_cards {
         });
 
 
+        return [the_array, cancel_button];
+    }
+
+    return_button_card() {
+        let top_label = new GENERIC_META_CALL().Generic_div(
+            "text-xl font-semibold text-violet-500 border-b-2 border-gray-200 p-2 w-full dark:text-white dark:border-b dark:border-gray-600 dark:bg-gray-700 flex flex-row justify-between",
+            "Return book"
+        )
+        let the_renting_form = document.createElement('form');
+        let User_Name_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "User Name: "
+        );
+        let return_button = new GENERIC_META_CALL().Generic_button(
+            "bg-blue-500 mt-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
+            "Return"
+        )
+        let extra_info_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 mt-2 border-gray-200 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let extra_info_div2 = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 mt-2 border-gray-200 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let User_Name_search_bar = new GENERIC_META_CALL().search_bar_dropdown(
+            "max-h-56",
+            "w-full shadow h-8 w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Enter User Name...",
+            "bg-gray-100 pb-2"
+        )
+
+        let organization_dropdown = new GENERIC_META_CALL().normal_select_dropdown(
+            "hidden",
+            [$('#current_user_organization').val()],
+        )
+        $(organization_dropdown).attr('name', 'organization')
+        let unique_book_id_drodown_label = new GENERIC_META_CALL().Generic_label(
+            "w-full text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Unique Book ID: "
+        );
+
+        let unique_book_id_dropdown;
+
+        $(User_Name_search_bar[1]).attr('required', 'true').attr('minlength', '3').attr('name', 'username')
+        $(User_Name_search_bar[1]).on('input', async function (e) {
+            //   Console and log the input.
+            console.log($(this).val());
+            //   Make an API call to get the list of users. 
+            if ($(this).val().length < 2) {
+                $(User_Name_search_bar[2]).empty();
+                return;
+            }
+            let url = "/api/v1/users/get_user_list";
+            let method = "POST";
+            let data = {
+                "search_string": $(this).val(),
+                "limit": 10,
+                "skip": 0,
+                "organization": $(organization_dropdown).val()
+            }
+            data = JSON.stringify(data);
+            let r1 = await new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data);
+            console.log("The response is: ")
+            console.log(r1);
+            let options = r1['data'];
+
+            for (let i = 0; i < options.length; i++) {
+                $(User_Name_search_bar[2]).empty();
+                let test_div = new GENERIC_META_CALL().Generic_div(
+                    "w-full text-gray-700 text-sm font-bold mb-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 p-2 bg-gray-200 hover:bg-gray-300",
+                    options[i]["username"]
+                )
+                $(test_div).attr('data-user_email', options[i]['email']).attr('data-user_name', options[i]['username']);
+                $(test_div).click(function (e) {
+                    // Transfer the username to the input box. And empty the options div.
+                    $(User_Name_search_bar[1]).val($(this).attr('data-user_email')).attr('title', $(this).attr('data-user_name')).attr('data-all_info', JSON.stringify(options[i]));
+                    let user_info_div = new dashboard_page_cards().user_info_div_for_rent_card(options[i]);
+                    $(user_info_div).attr('data-div_type', 'user_info_div_for_rent_card')
+                    $(extra_info_div2).empty();
+                    $(extra_info_div2).append(user_info_div);
+                    $(User_Name_search_bar[2]).empty();
+
+
+                    let book_ids_api_call = new GENERIC_APICALLS().GenericAPIJSON_CALL(
+                        '/api/v1/admin/books/returns/get_unique_book_ids',
+                        'POST',
+                        JSON.stringify({ "user_id": options[i]['sid'], "organization": $(organization_dropdown).val() })
+                    ).then(function (response) {
+                        console.log(response);
+                        let unique_book_ids = response['data'];
+                        unique_book_id_dropdown = new GENERIC_META_CALL().normal_select_dropdown(
+                            "w-full shadow appearance-none w-full mt-2 p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+                            unique_book_ids,
+                        )
+                        // Remove existing dropdown with unique book ids.
+                        $(the_renting_form).find('select[name="unique_book_id"]').remove();
+                        $(unique_book_id_dropdown).attr('name', 'unique_book_id')
+                        $(the_renting_form).append(unique_book_id_drodown_label);
+                        $(the_renting_form).append(unique_book_id_dropdown);
+                    });
+                });
+                $(User_Name_search_bar[2]).append(test_div);
+            }
+        });
+
+
+        let cancel_button = new GENERIC_META_CALL().Generic_button(
+            "p-2 text-gray-400 hover:text-black font-bold text-sm rounded focus:outline-none focus:shadow-outline",
+            "Cancel"
+        )
+        $(top_label).append(cancel_button);
+        $(the_renting_form).append(User_Name_label);
+        $(the_renting_form).append(User_Name_search_bar[0]);
+
+        $(the_renting_form).append(organization_dropdown);
+        let the_array = [
+            top_label,
+            // User_Name_label,
+            // User_Name_search_bar[0],
+            // Number_of_days_label,
+            // Number_of_days_input,
+            the_renting_form,
+            return_button,
+            extra_info_div,
+            extra_info_div2
+        ]
+
+        $(return_button).click(function () {
+            console.log("Rent button clicked");
+            if ($(unique_book_id_dropdown).val() == null) {
+                let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Please select a unique book id", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 1000)
+                $('body').append(status2);
+                return;
+            }
+            if (the_renting_form.reportValidity()) {
+                let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Processing rent...", ' animate-pulse  bg-black p-2 text-yellow-500 text-sm font-bold rounded', 3000)
+                $('body').append(status);
+                let user_data = JSON.parse($(User_Name_search_bar[1]).attr('data-all_info'));
+                let form_data = {
+                    "user_id": user_data['sid'],
+                    "unique_book_id": $(unique_book_id_dropdown).val(),
+                    "organization": $(organization_dropdown).val()
+                }
+                console.log(form_data);
+                let url = "/api/v1/admin/return_book";
+                let method = "POST";
+                let data = JSON.stringify(form_data);
+                let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
+                    $(status).remove();
+                    let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully returned book", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
+                    $('body').append(status2);
+                    $(cancel_button).click()
+                }).catch(function (error) {
+                    $(status).remove();
+                    let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in returning book", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 1000)
+                    $('body').append(status2);
+                });
+            }
+
+
+        });
         return [the_array, cancel_button];
     }
     book_info_div(book_data) {
@@ -908,7 +1082,6 @@ class dashboard_page_cards {
         $(wrapper_div).append(Book_tags);
         return wrapper_div;
     }
-
     book_info_card_scanner(book_data) {
         let wrapper_div = new GENERIC_META_CALL().Generic_div(
             "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg bg-gray-200 p-2 ",
@@ -1002,17 +1175,21 @@ class dashboard_page_API_calls {
         console.log(r1);
         return r1;
     }
-    refresh_book_list(limit, skip, special_filter) {
+    refresh_book_list(limit, skip, special_filter, empty_out = 1) {
         let url = "/api/v1/get_book_list";
         let method = "POST";
         let the_data = {
             "limit": limit,
             "skip": skip,
-            "special_filter": special_filter
+            "special_filter": special_filter,
+            "organization": $('#current_user_organization').val()
         }
         let data = JSON.stringify(the_data);
         let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
             console.log(response);
+            if (empty_out) {
+                $('#books_box').empty();
+            }
             let book_list = response['data'];
             let book_box = $('#books_box');
             let book_list_len = book_list.length;
@@ -1031,7 +1208,8 @@ class dashboard_page_API_calls {
         let the_data = {
             "limit": limit,
             "skip": skip,
-            "special_filter": special_filter
+            "special_filter": special_filter,
+            "organization": $('#current_user_organization').val()
         }
         let data = JSON.stringify(the_data);
         let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
