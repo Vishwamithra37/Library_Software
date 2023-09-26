@@ -1195,6 +1195,18 @@ class dashboard_page_cards {
             "Book title",
             new GENERIC_META_CALL().Generic_space_splitter_and_join(book_data['title'], 1)
         )
+        let add_more_copies_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Add more copies:"
+        );
+        let add_more_copies_input = new GENERIC_META_CALL().Generic_input(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Add more copies",
+            book_data['noofcopies']
+        )
+        add_more_copies_input.setAttribute('type', 'number');
+        add_more_copies_input.setAttribute('min', book_data['noofcopies']);
+        add_more_copies_input.setAttribute('name', 'noofcopies');
         book_title_input.setAttribute('type', 'text');
         book_title_input.setAttribute('required', 'true');
         book_title_input.setAttribute('minlength', '3');
@@ -1233,6 +1245,7 @@ class dashboard_page_cards {
             "Book tags",
             book_data['tags'].join(',')
         )
+        new dashboard_page_cards().extra_option_div_binder('/api/v1/admin/get_book_tags?book_tag_parameter=tags', book_tags_input);
         let isbn_label = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
             "ISBN: "
@@ -1257,6 +1270,8 @@ class dashboard_page_cards {
         $(edit_book_form).append(book_tags_input);
         $(edit_book_form).append(isbn_label);
         $(edit_book_form).append(isbn_input);
+        $(edit_book_form).append(add_more_copies_label);
+        $(edit_book_form).append(add_more_copies_input);
         $(wrapper_div).append(big_label);
         $(wrapper_div).append(edit_book_form);
 
