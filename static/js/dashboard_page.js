@@ -550,9 +550,6 @@ class dashboard_page_cards {
         $(buttons_wrapper_div).append(lend_button);
         $(buttons_wrapper_div).append(edit_book);
 
-
-
-
         $(lend_button).click(function (e) {
             let lend_card = new dashboard_page_cards().rent_button_card(book_data);
             lend_card[0] = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater(lend_card[0]);
@@ -560,6 +557,14 @@ class dashboard_page_cards {
                 $(lend_card[0]).remove();
             });
             $('body').append(lend_card[0]);
+        });
+        $(edit_book).click(function (e) {
+            let edit_card = new dashboard_page_cards().edit_details_card(book_data);
+            edit_card[0] = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater(edit_card[0]);
+            $(edit_card[1]).click(function () {
+                $(edit_card[0]).remove();
+            });
+            $('body').append(edit_card[0]);
         });
 
         let show_details_button = new GENERIC_META_CALL().Generic_div(
@@ -1164,6 +1169,104 @@ class dashboard_page_cards {
         $(wrapper_div).append(return_button);
 
         return wrapper_div;
+    }
+    edit_details_card(book_data) {
+        console.log(book_data);
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let big_label = new GENERIC_META_CALL().Generic_div(
+            "text-xl font-semibold text-violet-500 border-b-2 border-gray-200 p-2 w-full dark:text-white dark:border-b dark:border-gray-600 dark:bg-gray-700 flex flex-row justify-between",
+            "Edit book details"
+        )
+        let cancel_button = new GENERIC_META_CALL().Generic_button(
+            "p-2 text-gray-400 hover:text-black font-bold text-sm rounded focus:outline-none focus:shadow-outline",
+            "Cancel"
+        );
+        $(big_label).append(cancel_button);
+        let edit_book_form = document.createElement('form');
+        let book_title_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Book title: "
+        );
+        let book_title_input = new GENERIC_META_CALL().Generic_input(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Book title",
+            new GENERIC_META_CALL().Generic_space_splitter_and_join(book_data['title'], 1)
+        )
+        book_title_input.setAttribute('type', 'text');
+        book_title_input.setAttribute('required', 'true');
+        book_title_input.setAttribute('minlength', '3');
+        book_title_input.setAttribute('name', 'title');
+        let book_author_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Book author: "
+        );
+        let book_author_input = new GENERIC_META_CALL().Generic_input(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Book author",
+            book_data['author']
+        )
+        book_author_input.setAttribute('type', 'text');
+        book_author_input.setAttribute('required', 'true');
+        book_author_input.setAttribute('minlength', '3');
+        book_author_input.setAttribute('name', 'author');
+        let book_description_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Book description: "
+        );
+        let book_description_input = new GENERIC_META_CALL().Generic_textarea(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Book description",
+        );
+        $(book_description_input).text(book_data['description']);
+        book_description_input.setAttribute('required', 'true');
+        book_description_input.setAttribute('minlength', '3');
+        book_description_input.setAttribute('name', 'description');
+        let book_tags_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Book tags: "
+        );
+        let book_tags_input = new GENERIC_META_CALL().Generic_input(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Book tags",
+            book_data['tags'].join(',')
+        )
+        let isbn_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "ISBN: "
+        );
+        let isbn_input = new GENERIC_META_CALL().Generic_input(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "ISBN",
+            book_data['isbn']
+        )
+        book_tags_input.setAttribute('type', 'text');
+        book_tags_input.setAttribute('required', 'true');
+        book_tags_input.setAttribute('minlength', '3');
+        book_tags_input.setAttribute('name', 'tags');
+
+        $(edit_book_form).append(book_title_label);
+        $(edit_book_form).append(book_title_input);
+        $(edit_book_form).append(book_author_label);
+        $(edit_book_form).append(book_author_input);
+        $(edit_book_form).append(book_description_label);
+        $(edit_book_form).append(book_description_input);
+        $(edit_book_form).append(book_tags_label);
+        $(edit_book_form).append(book_tags_input);
+        $(edit_book_form).append(isbn_label);
+        $(edit_book_form).append(isbn_input);
+        $(wrapper_div).append(big_label);
+        $(wrapper_div).append(edit_book_form);
+
+        let update_button = new GENERIC_META_CALL().Generic_button(
+            "bg-green-500 mt-2 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
+            "Update"
+        );
+        $(wrapper_div).append(update_button);
+
+        return [[wrapper_div], cancel_button, update_button];
     }
 }
 class dashboard_page_API_calls {

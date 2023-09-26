@@ -45,6 +45,16 @@ class GENERIC_APICALLS {
 
 }
 class GENERIC_META_CALL {
+    Generic_space_splitter_and_join(string, join_from) {
+        let arr = string.split(' ');
+        // Join from the join_from index.
+        let len_of_arr = arr.length;
+        let new_arr = [];
+        for (let i = join_from; i < len_of_arr; i++) {
+            new_arr.push(arr[i]);
+        }
+        return new_arr.join(' ');
+    }
     Generic_put_it_in_flex_col(classer, stack) {
         let wrapper_div = document.createElement('div');
         $(wrapper_div).addClass(classer);
