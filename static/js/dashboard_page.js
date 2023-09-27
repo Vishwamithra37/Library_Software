@@ -149,12 +149,12 @@ $(document).ready(function () {
                         "Cancel"
                     )
                     let stoper0 = new GENERIC_META_CALL().Generic_div('h-auto max-w-3xl ml-2', '');
-                    let stoper1 = new GENERIC_META_CALL().Generic_div('max-h-96 max-w-3xl flex flex-col overflow-x-auto ', '');
+                    let stoper1 = new GENERIC_META_CALL().Generic_div('max-h-96 max-w-max flex flex-wrap flex-row overflow-x-auto ', '');
                     let col_holder = new GENERIC_META_CALL().Generic_div('h-auto max-w-fit ml-2 bg-green-500 flex flex-col overflow-x-auto bg-white', '');
                     let float_actions = new dashboard_page_cards().scanner_action_card(stoper0, stoper1);
                     let stoper2 = new GENERIC_META_CALL().Generic_put_it_in_flex_col("flex flex-col", [cancel_button, scanner_div]);
                     let stoper3 = new GENERIC_META_CALL().Generic_div('h-auto w-auto', '');
-                    let floater = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater([stoper2, float_actions]);
+                    let floater = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater([stoper2, float_actions[0]]);
                     $(stoper0).attr('data-div_type', 'user_card_placeholder');
                     $(stoper1).attr('data-div_type', 'book_card_placeholder').attr('data-unique_book_id_array', '[]')
 
@@ -181,7 +181,7 @@ $(document).ready(function () {
 
 
                     let config = {
-                        fps: 10,
+                        fps: 25,
                         qrbox: { width: 250, height: 250 },
                         rememberLastUsedCamera: true,
                         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
@@ -201,12 +201,25 @@ $(document).ready(function () {
                     );
                     function onScanSuccess(decodedText, decodedResult) {
                         // handle the scanned code as you like, for example:
-                        console.log(`Code matched = ${decodedText}`, decodedResult);
-                        let pure_string = JSON.parse(decodedText)
-                        let final_string = JSON.parse(pure_string)
+                        let final_string = {}
+                        // Split the decodedText by the delimiter '-'
+                        let decodedText_array = decodedText.split('-');
+                        if (decodedText_array[3] == "Book_card") {
+                            console.log("Book card detected");
+                            final_string['unique_book_id'] = decodedText_array[0];
+                            final_string['Organization'] = decodedText_array[1];
+                            final_string['Book_id'] = decodedText_array[2];
+                            final_string['card_type'] = decodedText_array[3];
+
+                        }
+                        if (decodedText_array[3] == "Identity_card") {
+                            final_string['User_id'] = decodedText_array[0];
+                            final_string['Organization'] = decodedText_array[1];
+                            final_string['email'] = decodedText_array[2];
+                            final_string['card_type'] = decodedText_array[3];
+                        }
+                        console.log(decodedText_array);
                         console.log(final_string);
-                        // If it contains the keys: User_id, Organization and card_type as "Identity_card" then it is a valid card and we can proceed to the next step.
-                        // If it contains the keys: Book_id, Organization and card_type as "Book_card" then it is a valid card and we can proceed to the next step.
                         if (final_string['card_type'] == "Book_card" && Object.keys(final_string).includes('Book_id') && Object.keys(final_string).includes('Organization')) {
                             console.log("Book card detected");
                             let book_detail_getter = new GENERIC_APICALLS().GenericAPIJSON_CALL(
@@ -245,6 +258,27 @@ $(document).ready(function () {
                             });
                         }
                     }
+
+                    $(float_actions[1]).click(function () {
+                        let user_data = JSON.parse($(floater).find('[data-div_type="user_card_placeholder"]').attr('data-user_data'))
+                        let data_to_send = {
+                            "organization": $('#current_user_organization').val(),
+                            "user_id": user_data['sid'],
+                            "noofdays": $(float_actions[0]).find('[name="noofdays"]').val(),
+                            "unique_book_ids": JSON.parse($(floater).find('[data-div_type="book_card_placeholder"]').attr('data-unique_book_id_array')),
+                        }
+                        let url = "/api/v1/admin/books/scanner/action";
+                        let method = "POST";
+                        let data = JSON.stringify(data_to_send);
+                        let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Processing...", ' animate-pulse  bg-black p-2 text-yellow-500 text-sm font-bold rounded', 3000)
+                        $('body').append(status);
+                        let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
+                            $(status).remove();
+                            let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Rent/return action completed successfully", ' animate-pulse  bg-black p-2 text-green-500 text-sm font-bold rounded', 3000)
+                            $('body').append(status2);
+                        });
+                    });
+
                 })
                 .catch(function (error) {
                     return; // Return or handle the case when camera permission is denied or an error occurs
@@ -1153,10 +1187,11 @@ class dashboard_page_cards {
         )
         number_of_days_to_be_rented_input.setAttribute('type', 'number');
         number_of_days_to_be_rented_input.setAttribute('min', '1');
+        number_of_days_to_be_rented_input.setAttribute('name', 'noofdays');
 
         let rent_button = new GENERIC_META_CALL().Generic_button(
             "bg-blue-500 mt-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
-            "Rent"
+            "Act upon books and scanned user"
         )
         let return_button = new GENERIC_META_CALL().Generic_button(
             "bg-green-500 mt-2 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
@@ -1166,9 +1201,9 @@ class dashboard_page_cards {
         $(wrapper_div).append(number_of_days_to_be_rented_label);
         $(wrapper_div).append(number_of_days_to_be_rented_input);
         $(wrapper_div).append(rent_button);
-        $(wrapper_div).append(return_button);
+        // $(wrapper_div).append(return_button);
 
-        return wrapper_div;
+        return [wrapper_div, rent_button, return_button];
     }
     edit_details_card(book_data) {
         console.log(book_data);

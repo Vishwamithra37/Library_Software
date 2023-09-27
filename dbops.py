@@ -3,8 +3,7 @@ import datetime
 from bson.objectid import ObjectId
 import easycrypt
 import cryptography
-
-
+import qrcode
 import additional_functions
 
 dab = config.DB[config.DATABASE]
@@ -53,6 +52,14 @@ class math_operations:
             else:
                 return (time_difference_in_days-int(rent_object["rentedfor"]))*day_penality+(time_difference_in_days//30)*month_penality+(time_difference_in_days//365)*year_penality
         
+class QR_code_operations:
+    def generate_QR(stringer:str): 
+       img = qrcode.make(stringer)
+       with open('qr.png', 'wb') as f:
+           img.save(f)
+       return True
+
+
 
 class inserts:
     def return_book(unique_book_id: str, user_id: str, organization:str,Unique_book_object:dict):
@@ -152,6 +159,8 @@ class inserts:
         dac3.update_one({"_id":ObjectId(unique_book_id)},{"$set":{"status":"Rented"},"$inc":{"nooftimes_rented":1}})
         # ################## End Insertion and Update #################
         return True
+
+
     
 
     
@@ -503,10 +512,11 @@ class getters:
             "organization":organization
         }
         ret={
-            "_id":0,
         }
         v1=dac.find_one(fil,ret)
         if v1:
+            v1["sid"]=str(v1["_id"])
+            del v1["_id"]
             return v1
         return False
 

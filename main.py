@@ -270,11 +270,51 @@ def admin_rent_book():
     unique_book_details=dbops.getters.get_specific_book_details_by_unique_id(Flask_JSON["unique_book_id"],Flask_JSON["organization"])
     common_book_details=dbops.getters.get_specific_book_details(unique_book_details["BOOK_ID"],Flask_JSON["organization"])
     if not unique_book_details: return {'status': 'error', 'message': 'Invalid unique book ID'}, 400
+    if unique_book_details["status"]=="Rented": return {'status': 'error', 'message': 'Book already rented'}, 400
     if not common_book_details: return {'status': 'error', 'message': 'Invalid book ID'}, 400
     step1= dbops.inserts.rent_book(common_book_details,unique_book_details,Flask_JSON["unique_book_id"], Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"],Flask_JSON["organization"])
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Conditions to rent not met. Please check the number of books available or if it is already rented to the said user.'}, 500
+
+@app.route('/api/v1/admin/books/scanner/action', methods=['POST'])
+def admin_rent_books():
+    
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error', 'message': 'Invalid token'}, 400
+    if not "admin_rent_book" in UserDetails["permissions"]:
+        print(UserDetails["permissions"])
+        return {'status': 'error', 'message': 'You do not have permission to rent books'}, 400
+    Flask_JSON = flask.request.get_json()
+    print(Flask_JSON)
+    ################### Validation ###################
+    expected_keys = ['user_id','unique_book_ids','noofdays','organization']
+    if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
+        return {'status': 'error', 'message': 'Missing keys'}, 400
+    for i in Flask_JSON["unique_book_ids"]:
+        if 200<len(i) < 2: return {'status': 'error', 'message': 'unique_book_id too short'}, 400
+    if 200<len(Flask_JSON['user_id']) < 2: return {'status': 'error', 'message': 'User ID too short'}, 400
+    if int(Flask_JSON['noofdays']) <1 : return {'status': 'error', 'message': 'At least 1 day required'}, 400
+    if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    ################## End Validation #################
+    for i in Flask_JSON["unique_book_ids"]:
+        # Check all book rent status.
+        unique_book_details=dbops.getters.get_specific_book_details_by_unique_id(i,Flask_JSON["organization"])
+        common_book_details=dbops.getters.get_specific_book_details(unique_book_details["BOOK_ID"],Flask_JSON["organization"])
+        if not unique_book_details: return {'status': 'error', 'message': 'Invalid unique book ID'}, 400
+        if unique_book_details["status"]=="Rented": 
+            step1= dbops.inserts.return_book(i, Flask_JSON["user_id"], Flask_JSON["organization"], unique_book_details)
+            if step1:
+                continue
+            return {'status': 'error', 'message': 'Conditions to return not met. Please check the number of books available or if it is already rented to the said user.'}, 500
+        if not common_book_details: return {'status': 'error', 'message': 'Invalid book ID'}, 400
+        step1= dbops.inserts.rent_book(common_book_details,unique_book_details,i, Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"],Flask_JSON["organization"])
+        if not step1:
+                return {'status': 'error', 'message': 'Conditions to rent not met. Please check the number of books available or if it is already rented to the said user.'}, 500
+    return {'status': 'success'}, 200
+
+
 
 @app.route('/api/v1/admin/get_specific_user_details_with_books_rented', methods=['GET'])
 def get_specific_user_details_with_books_rented():
