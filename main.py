@@ -278,12 +278,11 @@ def admin_rent_book():
     return {'status': 'error', 'message': 'Conditions to rent not met. Please check the number of books available or if it is already rented to the said user.'}, 500
 
 @app.route('/api/v1/admin/books/scanner/action', methods=['POST'])
-def admin_rent_books():
-    
+def admin_scanner_actions():
     UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
     if not UserDetails:
         return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "admin_rent_book" in UserDetails["permissions"]:
+    if not "admin_scanner_actions" in UserDetails["permissions"]:
         print(UserDetails["permissions"])
         return {'status': 'error', 'message': 'You do not have permission to rent books'}, 400
     Flask_JSON = flask.request.get_json()
@@ -307,7 +306,7 @@ def admin_rent_books():
             step1= dbops.inserts.return_book(i, Flask_JSON["user_id"], Flask_JSON["organization"], unique_book_details)
             if step1:
                 continue
-            return {'status': 'error', 'message': 'Conditions to return not met. Please check the number of books available or if it is already rented to the said user.'}, 500
+            return {'status': 'error', 'message': 'Conditions to return not met. Please make sure the ID and the One who borrowed the book match'}, 500
         if not common_book_details: return {'status': 'error', 'message': 'Invalid book ID'}, 400
         step1= dbops.inserts.rent_book(common_book_details,unique_book_details,i, Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"],Flask_JSON["organization"])
         if not step1:

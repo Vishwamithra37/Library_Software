@@ -145,27 +145,35 @@ $(document).ready(function () {
                     )
                     $(scanner_div).attr('id', 'scanner_div');
                     let cancel_button = new GENERIC_META_CALL().Generic_button(
-                        "p-2 text-gray-400 bg- hover:text-black w-full text-right font-bold text-sm rounded  focus:outline-none focus:shadow-outline",
+                        "p-2 text-gray-400 hover:text-black w-full text-right font-bold text-sm rounded  focus:outline-none focus:shadow-outline",
                         "Cancel"
                     )
+                    let cleaner = new GENERIC_META_CALL().Generic_div(
+                        "p-2 text-purple-400 hover:text-black text-left font-bold text-sm rounded  focus:outline-none focus:shadow-outline cursor-pointer",
+                        'Reset Book Scans'
+                    );
+                    let cancel_clean_holder = new GENERIC_META_CALL().Generic_div(
+                        'w-full flex flex-row justify-between',
+                        ''
+                    )
+                    $(cancel_clean_holder).append(cleaner);
+                    $(cancel_clean_holder).append(cancel_button);
+
                     let stoper0 = new GENERIC_META_CALL().Generic_div('h-auto max-w-3xl ml-2', '');
                     let stoper1 = new GENERIC_META_CALL().Generic_div('max-h-96 max-w-max flex flex-wrap flex-row overflow-x-auto ', '');
                     let col_holder = new GENERIC_META_CALL().Generic_div('h-auto max-w-fit ml-2 bg-green-500 flex flex-col overflow-x-auto bg-white', '');
                     let float_actions = new dashboard_page_cards().scanner_action_card(stoper0, stoper1);
-                    let stoper2 = new GENERIC_META_CALL().Generic_put_it_in_flex_col("flex flex-col", [cancel_button, scanner_div]);
+                    let stoper2 = new GENERIC_META_CALL().Generic_put_it_in_flex_col("flex flex-col", [cancel_clean_holder, scanner_div]);
                     let stoper3 = new GENERIC_META_CALL().Generic_div('h-auto w-auto', '');
                     let floater = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater([stoper2, float_actions[0]]);
                     $(stoper0).attr('data-div_type', 'user_card_placeholder');
                     $(stoper1).attr('data-div_type', 'book_card_placeholder').attr('data-unique_book_id_array', '[]')
 
+
+
                     $(col_holder).append(stoper1);
                     $(col_holder).append(stoper0);
                     $(floater).append(col_holder);
-
-
-
-
-
                     $(floater).children().removeClass('h-5/6').addClass('h-auto overflow-y-auto');
                     $('body').append(floater)
                     $(cancel_button).click(function () {
@@ -178,6 +186,10 @@ $(document).ready(function () {
                         $(floater).remove();
                     });
 
+                    $(cleaner).click(function () {
+                        $(stoper1).empty();
+                        $(stoper1).attr('data-unique_book_id_array', '[]');
+                    });
 
 
                     let config = {
@@ -294,9 +306,6 @@ $(document).ready(function () {
 });
 
 class dashboard_page_cards {
-
-
-
     register_new_book_div() {
         let top_label = new GENERIC_META_CALL().Generic_div(
             "text-xl font-semibold text-violet-500 border-b-2 border-gray-200 p-2 w-full dark:text-white dark:border-b dark:border-gray-600 dark:bg-gray-700 flex flex-row justify-between",
