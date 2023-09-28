@@ -58,7 +58,7 @@ def admin_register_api():
     if 50<len(Flask_JSON['email']) < 2: return {'status': 'error', 'message': 'Email too short'}, 400
     if not '@' in Flask_JSON['email']: return {'status': 'error', 'message': 'Invalid email'}, 400
     if 50<len(Flask_JSON['id_number']) < 2: return {'status': 'error', 'message': 'ID Number too short'}, 400
-    if Flask_JSON["role"] not in ["Student","Staff","Faculty","Admin","Other"]
+    if Flask_JSON["role"] not in ["Student","Staff","Faculty","Admin","Other"]: return {'status': 'error', 'message': 'Invalid role'}, 400
     ################## End Validation #################
     Flask_JSON["Role"]="Student"
     Flask_JSON["password"]=dbops.hash512(Flask_JSON["password"])
