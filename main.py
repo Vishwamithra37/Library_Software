@@ -42,18 +42,23 @@ def books():
 
 ####################### User Endpoints ############################
 @app.route('/api/v1/user/register', methods=['POST'])
-def register():
+def admin_register_api():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error', 'message': 'Invalid token'}, 400
+    if "admin_register_api" not in UserDetails["permissions"]:
+        return {'status': 'error', 'message': 'You do not have permission to register users'}, 400
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
-    expected_keys = ['username', 'password', 'email','id_number']
+    expected_keys = ['username', 'email','id_number','phone_number','description','organization','role','password']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
         return {'status': 'error', 'message': 'Missing keys'}, 400
     if 20<len(Flask_JSON['username']) < 2: return {'status': 'error', 'message': 'Username too short'}, 400
     if 50<len(Flask_JSON['password']) < 2: return {'status': 'error', 'message': 'Password too short'}, 400
     if 50<len(Flask_JSON['email']) < 2: return {'status': 'error', 'message': 'Email too short'}, 400
     if not '@' in Flask_JSON['email']: return {'status': 'error', 'message': 'Invalid email'}, 400
-    if not '.' in Flask_JSON['email']: return {'status': 'error', 'message': 'Invalid email'}, 400
     if 50<len(Flask_JSON['id_number']) < 2: return {'status': 'error', 'message': 'ID Number too short'}, 400
+    if Flask_JSON["role"] not in ["Student","Staff","Faculty","Admin","Other"]
     ################## End Validation #################
     Flask_JSON["Role"]="Student"
     Flask_JSON["password"]=dbops.hash512(Flask_JSON["password"])
@@ -71,6 +76,7 @@ def register():
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Username already exists'}, 400
+
 
 @app.route('/api/v1/user/login', methods=['POST'])
 def login():

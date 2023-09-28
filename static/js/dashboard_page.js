@@ -13,6 +13,14 @@ $(document).ready(function () {
             $(floating_k1).remove();
         });
     });
+    $('#user_management').click(function () {
+        let k1 = new dashboard_page_cards().user_search_and_add_card();
+        let floating_k1 = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater([k1[0]]);
+        $('body').append(floating_k1);
+        $(k1[1]).click(function () {
+            $(floating_k1).remove();
+        });
+    });
 });
 
 $(document).ready(function () {
@@ -1433,6 +1441,208 @@ class dashboard_page_cards {
 
 
         return [[wrapper_div], cancel_button, delete_button];
+    }
+    user_search_and_add_card() {
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            'w-full h-full flex flex-col shadow-md border-b-2 border-gray-200 shadow-lg bg-gray-200',
+            ''
+        )
+        let top_tab_bar = new GENERIC_META_CALL().Generic_div(
+            'w-full flex flex-row justify-start border-b-2 pb-2 bg-gray-100',
+            ''
+        )
+        let new_user_button = new GENERIC_META_CALL().Generic_button(
+            'bg-green-500 rounded-b-md shadow-lg hover:bg-green-700 text-white font-bold p-2  focus:outline-none focus:shadow-outline',
+            'Add new user'
+        )
+        let penality_payment_button = new GENERIC_META_CALL().Generic_button(
+            'bg-blue-500 shadow-lg rounded-b-md hover:bg-blue-700 text-white font-bold ml-2 p-2  focus:outline-none focus:shadow-outline',
+            'Update User'
+        )
+        let cancel_button = new GENERIC_META_CALL().Generic_button(
+            "p-2 text-gray-400 hover:text-black text-right font-bold text-sm rounded ml-auto text-right  focus:outline-none focus:shadow-outline",
+            "Cancel"
+        )
+        let content_box = new GENERIC_META_CALL().Generic_div(
+            'w-full flex flex-col justify-start',
+            ''
+        )
+
+        $(new_user_button).click(function () {
+            let k1 = new dashboard_page_cards().new_user_form_card();
+            $(content_box).empty();
+            $(content_box).append(k1[0]);
+        })
+        $(penality_payment_button).click(function () {
+            let k1 = new dashboard_page_cards().penality_payment_card();
+            $(content_box).empty();
+            $(content_box).append(k1[0]);
+        })
+
+
+        $(top_tab_bar).append(new_user_button);
+        $(top_tab_bar).append(penality_payment_button);
+        $(top_tab_bar).append(cancel_button);
+        $(wrapper_div).append(top_tab_bar);
+        $(wrapper_div).append(content_box);
+        $(new_user_button).click();
+        return [wrapper_div, cancel_button];
+    }
+    new_user_form_card() {
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            'w-full h-full p-2 flex flex-col shadow-md border-b-2 border-gray-200 shadow-lg bg-gray-200',
+            ''
+        )
+        let new_user_form = document.createElement('form');
+        let user_name_label = new GENERIC_META_CALL().Generic_label(
+            'block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left',
+            'User name: '
+        )
+        let user_name_input = new GENERIC_META_CALL().Generic_input(
+            'w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none',
+            'User name',
+            ''
+        )
+        $(user_name_input).attr('name', 'username').attr('required', 'true').attr('minlength', '3').attr('type', 'text');
+        let user_email_label = new GENERIC_META_CALL().Generic_label(
+            'block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left',
+            'User email: '
+        )
+        let user_email_input = new GENERIC_META_CALL().Generic_input(
+            'w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none',
+            'User email',
+            ''
+        )
+        $(user_email_input).attr('name', 'email').attr('required', 'true').attr('minlength', '3').attr('type', 'email');
+        let user_id_number_label = new GENERIC_META_CALL().Generic_label(
+            'block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left',
+            'User id number: '
+        )
+        let user_id_number_input = new GENERIC_META_CALL().Generic_input(
+            'w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none',
+            'User id number:: (Optional)',
+            ''
+        )
+        $(user_id_number_input).attr('name', 'id_number').attr('minlength', '3').attr('type', 'text');
+        let user_phone_label = new GENERIC_META_CALL().Generic_label(
+            'block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left',
+            'User phone: (Optional) '
+        )
+        let user_phone_input = new GENERIC_META_CALL().Generic_input(
+            'w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none',
+            'User phone',
+            ''
+        )
+        $(user_phone_input).attr('name', 'phone').attr('minlength', '3').attr('type', 'number');
+        let description_label = new GENERIC_META_CALL().Generic_label(
+            'block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left',
+            'Description: (Optional) '
+        )
+        let description_input = new GENERIC_META_CALL().Generic_textarea(
+            'w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none',
+            'Description (Optional)',
+        );
+        $(description_input).attr('name', 'description').attr('minlength', '3');
+        let user_type_label = new GENERIC_META_CALL().Generic_label(
+            'block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left',
+            'User type: '
+        )
+        let user_type_dropdown = new GENERIC_META_CALL().normal_select_dropdown(
+            'w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none',
+            ['Admin', 'Student', 'Faculty', 'Staff', 'Other']
+        );
+        $(user_type_dropdown).attr('name', 'user_type').attr('required', 'true');
+        let create_user_button = new GENERIC_META_CALL().Generic_button(
+            'w-full bg-green-500 mt-6 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline',
+            'Create user'
+        )
+        $(new_user_form).append(user_name_label);
+        $(new_user_form).append(user_name_input);
+        $(new_user_form).append(user_email_label);
+        $(new_user_form).append(user_email_input);
+        $(new_user_form).append(user_id_number_label);
+        $(new_user_form).append(user_id_number_input);
+        $(new_user_form).append(user_phone_label);
+        $(new_user_form).append(user_phone_input);
+        $(new_user_form).append(description_label);
+        $(new_user_form).append(description_input);
+        $(new_user_form).append(user_type_label);
+        $(new_user_form).append(user_type_dropdown);
+        $(new_user_form).append(create_user_button);
+        $(wrapper_div).append(new_user_form);
+        return [wrapper_div, new_user_form];
+    }
+    penality_payment_card() {
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            'w-full h-full p-2 flex flex-col shadow-md border-b-2 border-gray-200 shadow-lg bg-gray-200',
+            ''
+        )
+        let penality_payment_form = document.createElement('form');
+        let User_Name_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "User Name: "
+        );
+        let extra_info_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 mt-2 border-gray-200 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let extra_info_div2 = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 mt-2 border-gray-200 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let User_Name_search_bar = new GENERIC_META_CALL().search_bar_dropdown(
+            "max-h-56",
+            "w-full shadow h-8 w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Enter User Name...",
+            "bg-gray-100 pb-2"
+        )
+        $(User_Name_search_bar[1]).attr('required', 'true').attr('minlength', '3').attr('name', 'username')
+        $(User_Name_search_bar[1]).on('input', async function (e) {
+            //   Console and log the input.
+            console.log($(this).val());
+            //   Make an API call to get the list of users. 
+            if ($(this).val().length < 2) {
+                $(User_Name_search_bar[2]).empty();
+                return;
+            }
+            let url = "/api/v1/users/get_user_list";
+            let method = "POST";
+            let data = {
+                "search_string": $(this).val(),
+                "limit": 10,
+                "skip": 0,
+                "organization": $('#current_user_organization').val()
+            }
+            data = JSON.stringify(data);
+            let r1 = await new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data);
+            console.log("The response is: ")
+            console.log(r1);
+            let options = r1['data'];
+
+            for (let i = 0; i < options.length; i++) {
+                $(User_Name_search_bar[2]).empty();
+                let test_div = new GENERIC_META_CALL().Generic_div(
+                    "w-full text-gray-700 text-sm font-bold mb-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 p-2 bg-gray-200 hover:bg-gray-300",
+                    options[i]["username"]
+                )
+                $(test_div).attr('data-user_email', options[i]['email']).attr('data-user_name', options[i]['username']);
+                $(test_div).click(function (e) {
+                    // Transfer the username to the input box. And empty the options div.
+                    $(User_Name_search_bar[1]).val($(this).attr('data-user_email')).attr('title', $(this).attr('data-user_name')).attr('data-all_info', JSON.stringify(options[i]));
+                    let user_info_div = new dashboard_page_cards().user_info_div_for_rent_card(options[i]);
+                    $(user_info_div).attr('data-div_type', 'user_info_div_for_rent_card')
+                    $(extra_info_div2).empty();
+                    $(extra_info_div2).append(user_info_div);
+                    $(User_Name_search_bar[2]).empty();
+                });
+                $(User_Name_search_bar[2]).append(test_div);
+            }
+        });
+        $(penality_payment_form).append(User_Name_label);
+        $(penality_payment_form).append(User_Name_search_bar[0]);
+        $(wrapper_div).append(penality_payment_form);
+        return [wrapper_div, penality_payment_form];
+
     }
 }
 class dashboard_page_API_calls {
