@@ -221,6 +221,34 @@ class inserts:
             return True
         return False
     
+    def edit_book(new_book_object:dict,new_book_copies_to_add:int,old_common_book_object:dict,book_id:str):
+        """Returns True if the book was edited successfully
+
+        Keyword arguments:
+        new_book_object -- a dictionary containing the new book details from the form
+        book_id -- the book id (String)
+        Returns:
+        False -- if the book could not be edited (Boolean)
+        True -- if the book was edited successfully (Boolean)
+        """
+        dac = dab["BOOKS"]
+        dac2=dab["UNIQUE_BOOK_IDS"]
+        new_book_object["noofcopies_available_currently"]=old_common_book_object["noofcopies_available_currently"]+new_book_copies_to_add
+        if old_common_book_object["status"]=="Rented" and new_book_copies_to_add>0:
+            new_book_object["status"]="Available"
+        book_Object = dac.update_one({"_id":ObjectId(book_id)},{"$set":new_book_object})
+        del new_book_object["noofcopies_available_currently"]
+        if book_Object.acknowledged:
+            new_book_object["Update_timestamp"]=str(datetime.datetime.utcnow())
+            new_book_object["BOOK_ID"]=book_id
+            new_book_object["status"]="Available"
+            dac2.update_many({"BOOK_ID":book_id},{"$set":new_book_object})
+            for i in range(new_book_copies_to_add):
+                dac2.insert_one(new_book_object)
+                del new_book_object["_id"]
+            return True
+        return False        
+
     def add_unique_tags_to_config(all_new_book_parameters:dict):
         """Returns True if the tags were added successfully
 

@@ -584,14 +584,20 @@ class dashboard_page_cards {
         )
         let lend_button = new GENERIC_META_CALL().Generic_span(
             "text-base float-right ml-auto pr-3 border-r-2 border-gray-500 text-black hover:font-bold cursor-pointer",
-            "Rent Book"
+            "Rent"
         )
         let edit_book = new GENERIC_META_CALL().Generic_span(
-            "text-base float-right ml-auto mr-2 pl-3 text-black hover:font-bold cursor-pointer",
-            "Edit-Details"
+            "text-base float-right ml-auto pr-2 border-r-2 pl-3 border-gray-500 text-black hover:font-bold cursor-pointer",
+            "Edit"
         )
+        let delete_copy = new GENERIC_META_CALL().Generic_span(
+            "text-base float-right ml-auto mr-2 pl-2 text-black hover:font-bold cursor-pointer",
+            "Delete 📚"
+        )
+
         $(buttons_wrapper_div).append(lend_button);
         $(buttons_wrapper_div).append(edit_book);
+        $(buttons_wrapper_div).append(delete_copy);
 
         $(lend_button).click(function (e) {
             let lend_card = new dashboard_page_cards().rent_button_card(book_data);
@@ -609,6 +615,15 @@ class dashboard_page_cards {
             });
             $('body').append(edit_card[0]);
         });
+        $(delete_copy).click(function (e) {
+            let delete_card = new dashboard_page_cards().delete_book_copy_card(book_data);
+            delete_card[0] = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater(delete_card[0]);
+            $(delete_card[1]).click(function () {
+                $(delete_card[0]).remove();
+            });
+            $('body').append(delete_card[0]);
+        });
+
 
         let show_details_button = new GENERIC_META_CALL().Generic_div(
             "w-full text-right bg-gray-200 font-semibold  hover:text-green-600 text-green-500 cursor-pointer pl-2 pr-2 rounded-b-lg",
@@ -1050,7 +1065,7 @@ class dashboard_page_cards {
         );
         let Number_of_books_rented_currently_value = new GENERIC_META_CALL().Generic_span(
             "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
-            user_data["Library"]['Number_of_books_rented_currently']
+            user_data["Library"][$('#current_user_organization').val()]['Number_of_books_rented_currently']
         );
         let Number_of_books_returned_successfully = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
@@ -1058,7 +1073,7 @@ class dashboard_page_cards {
         );
         let Number_of_books_returned_successfully_value = new GENERIC_META_CALL().Generic_span(
             "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
-            user_data["Library"]['Number_of_books_returned']
+            user_data["Library"][$('#current_user_organization').val()]['Number_of_books_returned']
         );
         let Number_of_times_overdue = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
@@ -1066,7 +1081,7 @@ class dashboard_page_cards {
         );
         let Number_of_times_overdue_value = new GENERIC_META_CALL().Generic_span(
             "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
-            user_data["Library"]['Number_of_times_overdue']
+            user_data["Library"][$('#current_user_organization').val()]['Number_of_times_overdue']
         );
         let Fine_amount_yet_to_be_paid = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
@@ -1074,7 +1089,7 @@ class dashboard_page_cards {
         );
         let Fine_amount_yet_to_be_paid_value = new GENERIC_META_CALL().Generic_span(
             "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
-            user_data["Library"]['Total_fine_amount']
+            user_data["Library"][$('#current_user_organization').val()]['Total_fine_amount']
         );
 
         $(wrapper_div).append(name_label);
@@ -1324,8 +1339,100 @@ class dashboard_page_cards {
             "Update"
         );
         $(wrapper_div).append(update_button);
+        $(update_button).click(function () {
+            if (edit_book_form.reportValidity()) {
+                let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Processing update...", ' animate-pulse  bg-black p-2 text-yellow-500 text-sm font-bold rounded', 3000)
+                $('body').append(status);
+                let form_data = {
+                    "title": $(book_title_input).val(),
+                    "author": $(book_author_input).val(),
+                    "description": $(book_description_input).val(),
+                    "tags": $(book_tags_input).val(),
+                    "isbn": $(isbn_input).val(),
+                    "noofcopies": $(add_more_copies_input).val(),
+                    "book_id": book_data['sid'],
+                    "organization": $('#current_user_organization').val()
+                }
+                let url = "/api/v1/admin/books/edit_book";
+                let method = "POST";
+                console.log(form_data);
+                let data = JSON.stringify(form_data);
+                let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
+                    $(status).remove();
+                    let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully updated book", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
+                    $('body').append(status2);
+                    $(cancel_button).click()
+                }).catch(function (error) {
+                    $(status).remove();
+                    let status2 = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in updating book", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 1000)
+                    $('body').append(status2);
+                });
+
+            }
+        });
 
         return [[wrapper_div], cancel_button, update_button];
+    }
+    delete_book_copy_card(book_data) {
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg bg-gray-200 p-2 ",
+            ""
+        )
+        let big_label = new GENERIC_META_CALL().Generic_div(
+            "text-xl font-semibold text-red-500 border-b-2 border-gray-200 p-2 w-full dark:text-white dark:border-b dark:border-gray-600 dark:bg-gray-700 flex flex-row justify-between",
+            "Delete book copy"
+        )
+        let cancel_button = new GENERIC_META_CALL().Generic_button(
+            "p-2 text-gray-400 hover:text-black font-bold text-sm rounded focus:outline-none focus:shadow-outline",
+            "Cancel"
+        );
+        $(big_label).append(cancel_button);
+        let delete_book_form = document.createElement('form');
+        let book_title_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            "Book title: "
+        );
+        let book_title_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            book_data['title'].split(' ').slice(1).join(' ')
+        );
+        let unique_book_array;
+        let unique_book_id_dropdown;
+        let url = "/api/v1/books/get_unique_book_ids"
+        let method = "POST"
+        let data = {
+            "book_id": book_data['sid'],
+            "organization": $('#current_user_organization').val()
+        }
+        let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, JSON.stringify(data)).then(function (response) {
+            console.log(response);
+            unique_book_array = response['data']
+            unique_book_id_dropdown = new GENERIC_META_CALL().normal_select_dropdown(
+                "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+                unique_book_array
+            );
+            $(unique_book_id_dropdown).attr('name', 'unique_book_id');
+            $(delete_book_form).append(book_title_label);
+            $(delete_book_form).append(book_title_value);
+            $(delete_book_form).append(unique_book_id_label);
+            $(delete_book_form).append(unique_book_id_dropdown);
+            $(delete_book_form).append(delete_button);
+            $(wrapper_div).append(big_label);
+            $(wrapper_div).append(delete_book_form);
+        })
+        let delete_button = new GENERIC_META_CALL().Generic_button(
+            "bg-red-500 mt-2 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
+            "Delete"
+        );
+        let unique_book_id_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            "Unique book id: "
+        );
+
+
+
+
+        return [[wrapper_div], cancel_button, delete_button];
     }
 }
 class dashboard_page_API_calls {

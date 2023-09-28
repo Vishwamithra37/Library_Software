@@ -160,6 +160,24 @@ def get_specific_book_details():
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No book found'}, 400
+
+@app.route('/api/v1/admin/books/get_unique_book_details', methods=['POST'])
+def get_specific_unique_book_details():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return flask.redirect(flask.url_for('login_page'))
+    if not "get_specific_unique_book_details" in UserDetails["permissions"]:
+        return flask.redirect(flask.url_for('login_page'))
+    JSON_DATA = flask.request.get_json()
+    print(JSON_DATA)
+    if JSON_DATA.keys() != {"unique_book_id","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
+    if int(len(JSON_DATA["unique_book_id"]))<3: return {'status': 'error', 'message': 'Unique ID cannot be negative'}, 400
+    if int(len(JSON_DATA["organization"]))<3: return {'status': 'error', 'message': 'Organization cannot be negative'}, 400
+    step1=dbops.getters.get_specific_book_details_by_unique_id(JSON_DATA["unique_book_id"],JSON_DATA["organization"])
+    if step1:
+        return {'status': 'success', 'data': step1}, 200
+    return {'status': 'error', 'message': 'No book found'}, 400
+
     
 @app.route('/api/v1/books/get_unique_book_ids', methods=['POST'])
 def get_unique_book_ids():
@@ -195,7 +213,43 @@ def get_unique_book_ids_returns():
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No book found'}, 400
     
+@app.route('/api/v1/admin/books/edit_book', methods=['POST'])
+def admin_edit_book():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error', 'message': 'Invalid token'}, 400
+    if not "admin_edit_book" in UserDetails["permissions"]:
+        return {'status': 'error', 'message': 'You do not have permission to edit books'}, 400
+    Flask_JSON = flask.request.get_json()
+    ################### Validation ###################
+    expected_keys = ['title', 'author', 'isbn', 'description', 'tags', 'noofcopies', 'organization','book_id']
+    common_book_details=dbops.getters.get_specific_book_details(Flask_JSON["book_id"],Flask_JSON["organization"])
+    if not common_book_details: return {'status': 'error', 'message': 'Invalid book ID'}, 400
+    if list(set(expected_keys) - set(Flask_JSON.keys())) != []: return {'status': 'error', 'message': 'Missing keys'}, 400
+    if 200<len(Flask_JSON['title']) < 2: return {'status': 'error', 'message': 'Title too short'}, 400
+    if 200<len(Flask_JSON['author']) < 2: return {'status': 'error', 'message': 'Author too short'}, 400
+    if 200<len(Flask_JSON['isbn']) < 2: return {'status': 'error', 'message': 'ISBN too short'}, 400
+    if 400<len(Flask_JSON['description']) < 2: return {'status': 'error', 'message': 'Description too short'}, 400
+    if 200<len(Flask_JSON['tags']) < 1: return {'status': 'error', 'message': 'At least 1 tag required'}, 400
+    if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    if type(Flask_JSON['tags'])!=str: return {'status': 'error', 'message': 'Tags must be a string'}, 400
+    if int(Flask_JSON['noofcopies']) < int(common_book_details["noofcopies"]) : return {'status': 'error', 'message': 'Number of copies cannot be less than the existing number'}, 400
+    ################## End Validation #################
+    Flask_JSON["tags"]=Flask_JSON["tags"].split(",")
+    Flask_JSON["tags"]=[item.strip() for item in Flask_JSON["tags"]]
+    more_copies=int(Flask_JSON['noofcopies'])-int(common_book_details["noofcopies"])
+    BOOK_ID=Flask_JSON["book_id"]
+    del Flask_JSON["book_id"]
+    step1= dbops.inserts.edit_book(Flask_JSON,more_copies,common_book_details,BOOK_ID)
+    to_add_into_configs={
+        "tags":Flask_JSON["tags"]
+    }
+    step2= dbops.inserts.add_unique_tags_to_config(to_add_into_configs)
+    if step1:
+        return {'status': 'success'}, 200
+    return {'status': 'error', 'message': 'Internal error'}, 500
 
+        
 
 ####################### Admin Endpoints ############################
 @app.route('/api/v1/admin/books/register', methods=['POST'])
@@ -268,6 +322,7 @@ def admin_rent_book():
     if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
     ################## End Validation #################
     unique_book_details=dbops.getters.get_specific_book_details_by_unique_id(Flask_JSON["unique_book_id"],Flask_JSON["organization"])
+    if unique_book_details["status"]!="Available": return {'status': 'error', 'message': 'Book rented/lost'}, 400
     common_book_details=dbops.getters.get_specific_book_details(unique_book_details["BOOK_ID"],Flask_JSON["organization"])
     if not unique_book_details: return {'status': 'error', 'message': 'Invalid unique book ID'}, 400
     if unique_book_details["status"]=="Rented": return {'status': 'error', 'message': 'Book already rented'}, 400
@@ -307,13 +362,12 @@ def admin_scanner_actions():
             if step1:
                 continue
             return {'status': 'error', 'message': 'Conditions to return not met. Please make sure the ID and the One who borrowed the book match'}, 500
+        if unique_book_details["status"]!="Available": return {'status': 'error', 'message': 'Book already rented'}, 400
         if not common_book_details: return {'status': 'error', 'message': 'Invalid book ID'}, 400
         step1= dbops.inserts.rent_book(common_book_details,unique_book_details,i, Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"],Flask_JSON["organization"])
         if not step1:
                 return {'status': 'error', 'message': 'Conditions to rent not met. Please check the number of books available or if it is already rented to the said user.'}, 500
     return {'status': 'success'}, 200
-
-
 
 @app.route('/api/v1/admin/get_specific_user_details_with_books_rented', methods=['GET'])
 def get_specific_user_details_with_books_rented():
