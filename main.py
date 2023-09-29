@@ -41,28 +41,31 @@ def books():
 # Genric frontend #
 
 ####################### User Endpoints ############################
-@app.route('/api/v1/user/register', methods=['POST'])
-def admin_register_api():
+@app.route('/api/v1/user/register_passwordless', methods=['POST'])
+def admin_register_api_passwordless():
     UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
     if not UserDetails:
         return {'status': 'error', 'message': 'Invalid token'}, 400
-    if "admin_register_api" not in UserDetails["permissions"]:
+    if "admin_register_api_passwordless" not in UserDetails["permissions"]:
         return {'status': 'error', 'message': 'You do not have permission to register users'}, 400
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
-    expected_keys = ['username', 'email','id_number','phone_number','description','organization','role','password']
+    expected_keys = ['username', 'email','id_number','phone_number','description','organization','role']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
         return {'status': 'error', 'message': 'Missing keys'}, 400
+    if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    role_permission_data=dbops.getters.config_role_permission_dictionary(Flask_JSON["organization"])
     if 20<len(Flask_JSON['username']) < 2: return {'status': 'error', 'message': 'Username too short'}, 400
-    if 50<len(Flask_JSON['password']) < 2: return {'status': 'error', 'message': 'Password too short'}, 400
     if 50<len(Flask_JSON['email']) < 2: return {'status': 'error', 'message': 'Email too short'}, 400
     if not '@' in Flask_JSON['email']: return {'status': 'error', 'message': 'Invalid email'}, 400
     if 50<len(Flask_JSON['id_number']) < 2: return {'status': 'error', 'message': 'ID Number too short'}, 400
-    if Flask_JSON["role"] not in ["Student","Staff","Faculty","Admin","Other"]: return {'status': 'error', 'message': 'Invalid role'}, 400
+    print(role_permission_data)
+    if Flask_JSON["role"] not in role_permission_data["Roles_List"]: return {'status': 'error', 'message': 'Invalid role'}, 400
+
     ################## End Validation #################
-    Flask_JSON["Role"]="Student"
-    Flask_JSON["password"]=dbops.hash512(Flask_JSON["password"])
-    Flask_JSON["permissions"]=config.PERMISSION_LIST
+    Flask_JSON["Role"]=Flask_JSON["role"]
+    Flask_JSON["password"]="Passwordless"
+    Flask_JSON["permissions"]=role_permission_data["Role_Permission_Dictionary"][Flask_JSON["role"]]
     Flask_JSON["Library"]={}
     Flask_JSON["Library"]["Number_of_books_rented_currently"]=0
     Flask_JSON["Library"]["Number_of_books_returned"]=0
@@ -72,6 +75,15 @@ def admin_register_api():
     Flask_JSON["Library"]["Total_fine_amount_paid"]=0
     Flask_JSON["Library"]["Total_fine_amount_pending"]=0
     Flask_JSON["Library"]["Total_fine_amount_waived"]=0
+    Flask_JSON["Library"][Flask_JSON["organization"]]={}
+    Flask_JSON["Library"][Flask_JSON["organization"]]["Number_of_books_rented_currently"]=0
+    Flask_JSON["Library"][Flask_JSON["organization"]]["Number_of_books_returned"]=0
+    Flask_JSON["Library"][Flask_JSON["organization"]]["Number_of_times_overdue"]=0
+    Flask_JSON["Library"][Flask_JSON["organization"]]["Total_Number_of_books_rented"]=0
+    Flask_JSON["Library"][Flask_JSON["organization"]]["Total_fine_amount"]=0
+    Flask_JSON["Library"][Flask_JSON["organization"]]["Total_fine_amount_paid"]=0
+    Flask_JSON["Library"][Flask_JSON["organization"]]["Total_fine_amount_pending"]=0
+    Flask_JSON["Library"][Flask_JSON["organization"]]["Total_fine_amount_waived"]=0
     step1= dbops.inserts.register_new_user(Flask_JSON, Flask_JSON["email"])
     if step1:
         return {'status': 'success'}, 200
@@ -503,6 +515,24 @@ def get_book_list_special_filter():
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No books found'}, 400
+
+
+@app.route('/api/v1/dashboard/simplemetadata/<organization>', methods=['GET'])
+def simple_meta_data(organization):
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error', 'message': 'Invalid token'}, 401
+    if not "simple_meta_data" in UserDetails["permissions"]:
+        return {'status': 'error', 'message': 'You do not have permission to get simple metadata'}, 401
+    if organization not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 401
+    step1=dbops.getters.get_simple_meta_data(organization)
+    if step1:
+        return {'status': 'success', 'data': step1}, 200
+    return {'status': 'error', 'message': 'No data found'}, 400
+
+
+
+
 
 
 

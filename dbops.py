@@ -88,7 +88,10 @@ class inserts:
         add_overdue_count=0
         if penality:
             add_overdue_count=1
-
+            current_date=datetime.datetime.now()
+            rent_object["return_timestamp"]=str(current_date)
+            rent_object["time_difference"]=additional_functions.calculate_time_difference(datetime.datetime.strptime(rent_object["timestamp"],"%Y-%m-%d %H:%M:%S.%f"))
+            rent_object["is_overdue"]="Yes"
         dac1.insert_one(rent_object)
         dac3.update_one({"_id":ObjectId(user_id)},{"$inc":{          # Incrementing the number of books rented by the user. Purely for statistics.
                                                               "Library."+organization+".Number_of_books_rented_currently":-1,
@@ -266,6 +269,111 @@ class inserts:
         return True
     
 class getters:
+    def get_user_data_by_id(user_id:str,organization:str):
+        dac=dab["USERS"]
+        v1=dac.find_one({"_id":ObjectId(user_id),"organization":organization},{"_id":0})
+        if v1:
+            return v1
+        return False
+    def get_simple_meta_data(organization:str):
+        dac=dab["USERS"]
+        dac2=dab["BOOKS"]
+        dac3=dab["RENTS"]
+        print(organization)
+        current_date=datetime.datetime.now()
+        # Dues, Number of Books, Rents, total penality
+        v1=dac.aggregate([
+            {"$match":{"organization":organization}},
+            {"$group":{
+                "_id":None,
+                "user_total_users":{"$sum":1},
+                "user_total_books_taken_for_rent":{"$sum":"$Library."+organization+".Total_Number_of_books_rented"},
+                "user_current_active_rents":{"$sum":"$Library."+organization+".Number_of_books_rented_currently"},
+                "user_all_user_total_penality":{"$sum":"$Library."+organization+".Total_fine_amount"},
+                "user_all_time_total_dues_counter":{"$sum":"$Library."+organization+".Number_of_times_overdue"},
+                "user_total_amount_paid":{"$sum":"$Library."+organization+".Total_amount_paid"}
+            },
+            },
+            {"$project":{
+                "_id":0,
+                "user_total_users":1,
+                "user_total_books_taken_for_rent":1,
+                "user_current_active_rents":1,
+                "user_all_user_total_penality":1,
+                "user_all_time_total_dues_counter":1,
+                "user_total_amount_paid":1
+            }
+            }
+        ])
+        v1_data=list(v1)
+        Book_data=dac2.aggregate([
+            {"$match":{"organization":organization}},
+            {"$group":{
+                "_id":None,
+                "books_total_number_of_books_registered":{"$sum":1},
+                "books_noofcopies_books_available_currently":{"$sum":"$noofcopies_available_currently"},
+                "books_noofcopies_rented_currently":{"$sum":"$noofcopies_rented_currently"},
+                "books_nooftimes_books_have_been_rented":{"$sum":"$nooftimes_rented"}
+            },
+            },
+            {"$project":{
+                "_id":0,
+                "books_total_number_of_books_registered":1,
+                "books_noofcopies_books_available_currently":1,
+                "books_noofcopies_rented_currently":1,
+                "books_nooftimes_books_have_been_rented":1
+            }
+            }
+        ])
+        overdue_data = dac3.find({"organization": organization, "status": "Rented"}) 
+        overdue_data_2={}
+        overdue_data_2["penality"]=v1_data[0]["user_all_user_total_penality"]
+        overdue_data_2["card_data"]=[]
+        for i in overdue_data:
+            i["time_difference"]=additional_functions.calculate_time_difference(datetime.datetime.strptime(i["timestamp"],"%Y-%m-%d %H:%M:%S.%f"))
+            i["sid"]=str(i["_id"])
+            del i["_id"]
+            rented_for=int(i["rentedfor"])
+            if rented_for<i["time_difference"]:
+                unique_book_details=getters.get_specific_book_details_by_unique_id(i["unique_book_id"],organization)
+                user_details=getters.get_user_data_by_id(i["user_id"],organization)
+                overdue_data_2["total_penality"]=math_operations.calculate_penality(i)+overdue_data_2["penality"]
+                append_card={}
+                append_card["user_name"]=user_details["username"]
+                append_card["email"]=user_details["email"]
+                append_card["id_number"]=user_details["id_number"]
+                append_card["role"]=user_details["Role"]
+                append_card["book_name"]=unique_book_details["title"]
+                append_card["author"]=unique_book_details["author"]
+                append_card["book_tags"]=unique_book_details["tags"]
+                append_card["rented_for"]=i["rentedfor"]
+                append_card["rented_on"]=i["timestamp"]
+                append_card["overduefor"]=i["time_difference"]
+                append_card["penality"]=math_operations.calculate_penality(i)
+                overdue_data_2["card_data"].append(append_card)
+                
+        overdue_data_2["total_number_of_overdue_books"]=len(overdue_data_2["card_data"])
+        Book_data=list(Book_data)
+
+ 
+
+        return [v1_data[0],Book_data[0],overdue_data_2]
+
+    def config_role_permission_dictionary(orgaization:str):
+        """Returns the role permission dictionary for the organization
+
+        Keyword arguments:
+        organization -- the organization name
+        Returns:
+        False -- if the organization is invalid (Boolean)
+        True -- if the organization is valid (Boolean)
+        """
+        dac = dab["CONFIGS"]
+        v1 = dac.find_one({"Config_Name":"PERMISSIONS_DICTIONARY","organization":orgaization})
+        if v1:
+            del v1["_id"]
+            return v1
+        return False
     def config_organization_libary_parrameters(organization:str):
         """Returns the library parameters for the organization
 

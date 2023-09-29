@@ -313,6 +313,37 @@ $(document).ready(function () {
 
 });
 
+$(document).ready(function () {
+    // Get meta data and add it in inside the meta_data_divs.
+    let meta_data_get_url = "/api/v1/dashboard/simplemetadata/" + $('#current_user_organization').val();
+    let meta_data_get_method = "GET";
+    let meta_data_get_data = {};
+    let API_call = new GENERIC_APICALLS().GenericAPICallv2(meta_data_get_url, meta_data_get_method, meta_data_get_data).then(function (response) {
+        console.log(response);
+        let meta_data = response['data'];
+        let user_metadata = meta_data[0];
+        let book_metadata = meta_data[1];
+        let overdue_data = meta_data[2];
+        console.log(user_metadata);
+        console.log(book_metadata);
+        // statistics_total_books , statistics_total_users , statistics_total_borrowed_books , statistics_number_of_books_overdue , statistics_total_penality_due_to_late_return , statistics_total_amount_paid_by_users
+
+        $('#statistics_total_books').text(book_metadata['books_total_number_of_books_registered']);
+        $('#statistics_total_users').text(user_metadata['user_total_users']);
+        $('#statistics_total_borrowed_books').text(book_metadata['books_noofcopies_rented_currently']);
+        $('#statistics_number_of_books_overdue').text(overdue_data['total_number_of_overdue_books']).attr('data-overdue_books', JSON.stringify(overdue_data['card_data']));
+        $('#statistics_total_penality_due_to_late_return').text(overdue_data['total_penality']);
+        $('#statistics_total_amount_paid_by_users').text(user_metadata['user_total_amount_paid']);
+
+
+
+
+    });
+});
+
+
+
+
 class dashboard_page_cards {
     register_new_book_div() {
         let top_label = new GENERIC_META_CALL().Generic_div(
@@ -1549,7 +1580,7 @@ class dashboard_page_cards {
         )
         let user_type_dropdown = new GENERIC_META_CALL().normal_select_dropdown(
             'w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none',
-            ['Admin', 'Student', 'Faculty', 'Staff', 'Other']
+            ['Student', 'Faculty', 'Staff', 'Admin', 'Other']
         );
         $(user_type_dropdown).attr('name', 'user_type').attr('required', 'true');
         let create_user_button = new GENERIC_META_CALL().Generic_button(
@@ -1570,6 +1601,45 @@ class dashboard_page_cards {
         $(new_user_form).append(user_type_dropdown);
         $(new_user_form).append(create_user_button);
         $(wrapper_div).append(new_user_form);
+
+        $(create_user_button).click(function (e) {
+            e.preventDefault();
+            if (new_user_form.reportValidity()) {
+                // If any part of the form is null or 0 or empty, then add 000 to it.
+                for (let i = 0; i < $(new_user_form).find('input').length; i++) {
+                    if ($(new_user_form).find('input')[i].value == '') {
+                        $(new_user_form).find('input')[i].value = '000';
+                    }
+                }
+                let data_to_send = {
+                    "username": $(user_name_input).val(),
+                    "email": $(user_email_input).val(),
+                    "id_number": $(user_id_number_input).val(),
+                    "phone_number": $(user_phone_input).val(),
+                    "description": $(description_input).val(),
+                    "role": $(user_type_dropdown).val(),
+                    "organization": $('#current_user_organization').val()
+                }
+                // 'username', 'email','id_number','phone_number','description','organization','role'
+                console.log(data_to_send);
+                let url = "/api/v1/user/register_passwordless";
+                let method = "POST";
+                let data = JSON.stringify(data_to_send);
+                let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, data).then(function (response) {
+                    console.log(response);
+                    let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully created user", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
+                    $('body').append(status);
+                    $(cancel_button).click();
+                }).catch(function (error) {
+                    console.log(error);
+                    let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in creating user, Email or username already exists or you do not have permission", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 4000)
+                    $('body').append(status);
+                })
+            }
+        })
+
+
+
         return [wrapper_div, new_user_form];
     }
     penality_payment_card() {
