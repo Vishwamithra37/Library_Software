@@ -195,6 +195,9 @@ class inserts:
         token -- if the token was created successfully (String and Encrypted)
         """ 
         dac = dab["SESSIONS"]
+        number_of_sessions=len(list(dac.find({"email":user_Object["email"]},{"_id":1})))
+        if number_of_sessions>4:
+            dac.delete_one({"email":user_Object["email"]})
         v1 = dac.insert_one(user_Object)
         if v1.acknowledged:
             return enco(str(v1.inserted_id))
@@ -716,6 +719,25 @@ class getters:
         user_rented_books_list = getters.get_rented_books_by_user_id(str(user_object["_id"]))
         user_object["Library"]["rented_books"]=user_rented_books_list
         return user_object
+
+class updaters:
+    def update_user_data(
+                         organization:str,
+                         user_id:str,
+                         description:str="",
+                         username:str="",
+                         email:str="",
+                         phone_number:str="",
+                         description_of_user:str="",
+                         Payment_details:str=""
+                         ):
+        dac=dab["USERS"]
+        update_object={}
+        if description:
+            update_object["description"]=description
+
+        dac.update_one({"_id":ObjectId(user_id),"organization":organization},{"$set":update_object})
+        return True
         
         
      

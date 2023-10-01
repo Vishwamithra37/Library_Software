@@ -452,6 +452,39 @@ def normal_return_book():
     pass
 
 
+@app.route('/api/v1/admin/uusers/update_user', methods=['POST'])
+def admin_update_user():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error','message': 'Invalid token'}, 400
+    if not "admin_update_user" in UserDetails["permissions"]:
+        return {'status': 'error','message': 'You do not have permission to update users'}, 400
+    Flask_JSON = flask.request.get_json()
+    ################### Validation ###################
+    expected_keys = ['user_id', 'email', 'id_number', 'organization', 'permissions','phone_number','description','Role','Library_Payment']
+    if list(set(expected_keys) - set(Flask_JSON.keys())) != []: return {'status': 'error', 'message': 'Missing keys'}, 400
+    if 200<len(Flask_JSON['email']) < 2: return {'status': 'error', 'message': 'Email too short'}, 400
+    if 200<len(Flask_JSON['id_number']) < 2: return {'status': 'error', 'message': 'ID Number too short'}, 400
+    if 200<len(Flask_JSON['phone_number']) < 2: return {'status': 'error', 'message': 'Phone Number too short'}, 400
+    if 200<len(Flask_JSON['description']) < 2: return {'status': 'error', 'message': 'Description too short'}, 400
+    if 200<len(Flask_JSON['Role']) < 2: return {'status': 'error', 'message': 'Role too short'}, 400
+    if 200<len(Flask_JSON['Library_Payment']) < 0: return {'status': 'error', 'message': 'Library Payment too short'}, 400
+    if 200<len(Flask_JSON['permissions']) < 2: return {'status': 'error', 'message': 'Permissions too short'}, 400
+    if 200<len(Flask_JSON['organization']) < 2: return {'status': 'error', 'message': 'Organization too short'}, 400
+    if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    ################## End Validation #################
+    step1=dbops.updaters.update_user_data(Flask_JSON["email"],Flask_JSON)
+    if step1:
+        return {'status': 'success'}, 200
+    return {'status': 'error', 'message': 'Internal error'}, 500
+        
+
+
+
+
+
+
+
 #################### End Admin Endpoints ##########################
 
 @app.route('/api/v1/get_book_list', methods=['POST'])
