@@ -116,10 +116,15 @@ def login():
         return {'status': 'error', 'message': 'Internal error'}, 500
     return {'status': 'error', 'message': 'Invalid credentials'}, 400
 
-@app.route('/api/v1/users/logout', methods=['POST'])
-def logout():
+@app.route('/api/v1/users/logout', methods=['GET'])
+def logout_api():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'success'}, 200
+    if "logout_api" not in UserDetails["permissions"]:
+        return {'status': 'error', 'message': 'You do not have permission to logout'}, 400
     flask.session.clear()
-    return {'status': 'success'}, 200
+    return flask.redirect(flask.url_for('login_page'))
 
 @app.route('/api/v1/users/get_user_list', methods=['POST'])
 def get_user_list():
@@ -452,7 +457,7 @@ def normal_return_book():
     pass
 
 
-@app.route('/api/v1/admin/uusers/update_user', methods=['POST'])
+@app.route('/api/v1/admin/users/update_user', methods=['POST'])
 def admin_update_user():
     UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
     if not UserDetails:
@@ -461,25 +466,63 @@ def admin_update_user():
         return {'status': 'error','message': 'You do not have permission to update users'}, 400
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
-    expected_keys = ['user_id', 'email', 'id_number', 'organization', 'permissions','phone_number','description','Role','Library_Payment']
+    expected_keys = ['update_key', 'update_value','email','organization']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []: return {'status': 'error', 'message': 'Missing keys'}, 400
-    if 200<len(Flask_JSON['email']) < 2: return {'status': 'error', 'message': 'Email too short'}, 400
-    if 200<len(Flask_JSON['id_number']) < 2: return {'status': 'error', 'message': 'ID Number too short'}, 400
-    if 200<len(Flask_JSON['phone_number']) < 2: return {'status': 'error', 'message': 'Phone Number too short'}, 400
-    if 200<len(Flask_JSON['description']) < 2: return {'status': 'error', 'message': 'Description too short'}, 400
-    if 200<len(Flask_JSON['Role']) < 2: return {'status': 'error', 'message': 'Role too short'}, 400
-    if 200<len(Flask_JSON['Library_Payment']) < 0: return {'status': 'error', 'message': 'Library Payment too short'}, 400
-    if 200<len(Flask_JSON['permissions']) < 2: return {'status': 'error', 'message': 'Permissions too short'}, 400
-    if 200<len(Flask_JSON['organization']) < 2: return {'status': 'error', 'message': 'Organization too short'}, 400
+    list_of_update_keys=["username","email","id_number","phone_number","description","Payment"]
+    if Flask_JSON["update_key"] not in list_of_update_keys: return {'status': 'error', 'message': 'Invalid update key'}, 400
+    if int(len(Flask_JSON["update_value"]))<3: return {'status': 'error', 'message': 'Update value too short'}, 400
+    if int(len(Flask_JSON["email"]))<3 or "@" not in Flask_JSON["email"]: return {'status': 'error', 'message': 'Invalid email'}, 400
     if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    if Flask_JSON["update_key"]=="id_number" or Flask_JSON["update_key"]=="phone_number":
+        if len(Flask_JSON["update_value"])<3: return {'status': 'error', 'message': 'Update value must be a number'}, 400
+
     ################## End Validation #################
-    step1=dbops.updaters.update_user_data(Flask_JSON["email"],Flask_JSON)
+    step1=dbops.updaters.update_user_data(Flask_JSON["email"],Flask_JSON["update_key"],Flask_JSON["update_value"],Flask_JSON["organization"])
+    if step1:
+        return {'status': 'success'}, 200
+    return {'status': 'error', 'message': 'Internal error'}, 500
+
+@app.route('/api/v1/admin/users/admin_add_user_payment', methods=['POST'])
+def admin_add_user_payment():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {'status': 'error','message': 'Invalid token'}, 400
+    if not "admin_add_user_payment" in UserDetails["permissions"]:
+        return {'status': 'error','message': 'You do not have permission to update users'}, 400
+    Flask_JSON = flask.request.get_json()
+    ################### Validation ###################
+    expected_keys = ['Payment_Value','email','organization']
+    if list(set(expected_keys) - set(Flask_JSON.keys())) != []: return {'status': 'error', 'message': 'Missing keys'}, 400
+    payment_value=float(Flask_JSON["Payment_Value"])
+    if not payment_value: return {'status': 'error', 'message': 'Payment value must be a number'}, 400
+    if payment_value<0: return {'status': 'error', 'message': 'Payment value cannot be negative'}, 400
+    if int(len(Flask_JSON["email"]))<3 or "@" not in Flask_JSON["email"]: return {'status': 'error', 'message': 'Invalid email'}, 400
+    step1=dbops.updaters.add_user_payment(Flask_JSON["email"],payment_value,Flask_JSON["organization"])
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Internal error'}, 500
         
 
+@app.route('/api/v1/admin/books/delete_unique_book', methods=['POST'])
+def delete_admin_book():
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {"status":"error", "message": "Invalid token"},400
+    if not "delete_admin_book" in UserDetails["permissions"]:
+        return {"status":"error", "message": "You do not have permission to delete book"},400
+    JSON_DATA=flask.request.get_json()
+    if JSON_DATA.keys() != {"Unique_Book_ID","Organization"}: return {"status":"error", "message": "Missing keys"},400
+    if int(len(JSON_DATA["Unique_Book_ID"]))<3: return {"status":"error", "message": "Unique Book ID too short"},400
+    if int(len(JSON_DATA["Organization"]))<3: return {"status":"error", "message": "Organization too short"},400
+    step1=dbops.deleters.delete_unique_book(JSON_DATA["Unique_Book_ID"],JSON_DATA["Organization"])
+    if step1:
+        return {"status":"success"},200
+    return {"status":"error", "message": "Internal error"},500
 
+
+
+
+ 
 
 
 

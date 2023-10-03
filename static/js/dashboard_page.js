@@ -1468,6 +1468,25 @@ class dashboard_page_cards {
             "Unique book id: "
         );
 
+        $(delete_button).click(function (e) {
+            e.preventDefault();
+            let data = {
+                "Unique_Book_ID": $(unique_book_id_dropdown).val(),
+                "Organization": $('#current_user_organization').val()
+            }
+            let url = "/api/v1/admin/books/delete_unique_book"
+            let method = "POST"
+            let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, JSON.stringify(data)).then(function (response) {
+                console.log(response);
+                let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully deleted book", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
+                $('body').append(status);
+                $(cancel_button).click()
+            }).catch(function (error) {
+                let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in deleting book", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 3000)
+                $('body').append(status);
+            })
+        })
+
 
 
 
@@ -1488,7 +1507,7 @@ class dashboard_page_cards {
         )
         let penality_payment_button = new GENERIC_META_CALL().Generic_button(
             'bg-blue-500 shadow-lg rounded-b-md hover:bg-blue-700 text-white font-bold ml-2 p-2  focus:outline-none focus:shadow-outline',
-            'Update User'
+            'Make payment'
         )
         let cancel_button = new GENERIC_META_CALL().Generic_button(
             "p-2 text-gray-400 hover:text-black text-right font-bold text-sm rounded ml-auto text-right  focus:outline-none focus:shadow-outline",
@@ -1666,6 +1685,44 @@ class dashboard_page_cards {
             "Enter User Name...",
             "bg-gray-100 pb-2"
         )
+        let payment_value_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Payment value: "
+        );
+        let payment_value_input = new GENERIC_META_CALL().Generic_input(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Payment value (Rs) ",
+            ''
+        )
+        $(payment_value_input).attr('name', 'payment_value').attr('required', 'true').attr('minlength', '1').attr('min', '1').attr('type', 'number');
+
+        let payment_mode_dropdown_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Payment mode: "
+        );
+        let payment_mode_dropdown = new GENERIC_META_CALL().normal_select_dropdown(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            ['Cash', 'UPI', 'Card', 'Other']
+        )
+        let payment_reference_number_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Payment reference number: "
+        );
+        let payment_reference_number_input = new GENERIC_META_CALL().Generic_input(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Payment reference number",
+            ''
+        )
+        $(payment_reference_number_input).attr('name', 'payment_reference_number').attr('required', 'true').attr('minlength', '1').attr('min', '1').attr('type', 'text');
+        let add_payment_button = new GENERIC_META_CALL().Generic_button(
+            "w-full bg-green-500 mt-6 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline",
+            "Add payment"
+        )
+
+
+
+
+
         $(User_Name_search_bar[1]).attr('required', 'true').attr('minlength', '3').attr('name', 'username')
         $(User_Name_search_bar[1]).on('input', async function (e) {
             //   Console and log the input.
@@ -1701,16 +1758,52 @@ class dashboard_page_cards {
                     $(User_Name_search_bar[1]).val($(this).attr('data-user_email')).attr('title', $(this).attr('data-user_name')).attr('data-all_info', JSON.stringify(options[i]));
                     let user_info_div = new dashboard_page_cards().user_info_div_for_rent_card(options[i]);
                     $(user_info_div).attr('data-div_type', 'user_info_div_for_rent_card')
-                    $(extra_info_div2).empty();
-                    $(extra_info_div2).append(user_info_div);
+                    $(extra_info_div).empty();
+                    $(extra_info_div).append(user_info_div);
                     $(User_Name_search_bar[2]).empty();
                 });
                 $(User_Name_search_bar[2]).append(test_div);
             }
         });
+
+        $(add_payment_button).click(function (e) {
+            e.preventDefault();
+            if (penality_payment_form.reportValidity()) {
+                let data = {
+                    "username": $(User_Name_search_bar[1]).val(),
+                    "payment_value": $(payment_value_input).val(),
+                    "payment_mode": $(payment_mode_dropdown).val(),
+                    "payment_reference_number": $(payment_reference_number_input).val(),
+                    "organization": $('#current_user_organization').val()
+                }
+                let url = "/api/v1/admin/users/admin_add_user_payment";
+                let method = "POST";
+                let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, JSON.stringify(data)).then(function (response) {
+                    console.log(response);
+                    let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully added payment", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
+                    $('body').append(status);
+                    $(cancel_button).click();
+                }).catch(function (error) {
+                    console.log(error);
+                    let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in adding payment", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 4000)
+                    $('body').append(status);
+                })
+            }
+        })
+
+
+
         $(penality_payment_form).append(User_Name_label);
         $(penality_payment_form).append(User_Name_search_bar[0]);
+        $(penality_payment_form).append(payment_value_label);
+        $(penality_payment_form).append(payment_value_input)
+        $(penality_payment_form).append(payment_mode_dropdown_label);
+        $(penality_payment_form).append(payment_mode_dropdown);
+        $(penality_payment_form).append(payment_reference_number_label);
+        $(penality_payment_form).append(payment_reference_number_input);
+        $(penality_payment_form).append(add_payment_button);
         $(wrapper_div).append(penality_payment_form);
+        $(wrapper_div).append(extra_info_div);
         return [wrapper_div, penality_payment_form];
 
     }

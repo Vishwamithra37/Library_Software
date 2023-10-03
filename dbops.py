@@ -721,6 +721,10 @@ class getters:
         return user_object
 
 class updaters:
+    def add_user_payment(user_email:str,organization:str,amount_paid:int):
+        dac=dab["USERS"]
+        dac.update_one({"email":user_email,"organization":organization},{"$inc":{"Library."+organization+".Total_amount_paid":amount_paid}})
+        return True
     def update_user_data(
                          organization:str,
                          user_id:str,
@@ -742,3 +746,33 @@ class updaters:
         
      
 
+class deleters:
+    def delete_unique_book(unique_book_id:str,organization:str):
+        dac=dab["UNIQUE_BOOK_IDS"]
+        dac2=dab["RENTS"]
+        dac3=dab["BOOKS"]
+        dac4=dab["OLD_UNIQUE_BOOK_IDS_RECORDS"]
+
+        unique_book_object=dac.find_one({"_id":ObjectId(unique_book_id),"organization":organization})
+        Total_number_of_books_rented=len(list(dac2.find({"unique_book_id":unique_book_id,"organization":organization},{"_id":1})))
+        if_successful_number_of_copies=int(unique_book_object["noofcopies"])-1
+        number_of_unique_books=unique_book_object["noofcopies"]
+        if not unique_book_object:
+            return False
+        if int(number_of_unique_books)>1 and unique_book_object["status"]=="Available":
+            dac.delete_one({"_id":ObjectId(unique_book_id),"organization":organization})
+            dac4.insert_one(unique_book_object)
+            dac3.update_one({"_id":ObjectId(unique_book_object["BOOK_ID"])},{"$inc":{"noofcopies_available_currently":-1},"$set":{"noofcopies":if_successful_number_of_copies}})
+            dac.update_many({"BOOK_ID":unique_book_object["BOOK_ID"]},{"$set":{"noofcopies":if_successful_number_of_copies}})
+            return True
+        elif not Total_number_of_books_rented and unique_book_object["status"]=="Available" and unique_book_object["noofcopies"]==1:
+            dac.delete_one({"_id":ObjectId(unique_book_id),"organization":organization})
+            dac4.insert_one(unique_book_object)
+            dac4.insert_one(dac3.find_one({"_id":ObjectId(unique_book_object["BOOK_ID"])}))
+            dac3.delete_one({"_id":ObjectId(unique_book_object["BOOK_ID"])})
+            return True
+        print(unique_book_object["status"])
+        print(Total_number_of_books_rented)
+        print(number_of_unique_books)
+        print("Not deleted")
+        return False
