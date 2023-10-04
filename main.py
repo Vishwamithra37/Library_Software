@@ -491,13 +491,24 @@ def admin_add_user_payment():
         return {'status': 'error','message': 'You do not have permission to update users'}, 400
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
-    expected_keys = ['Payment_Value','email','organization']
+    print(Flask_JSON)
+    expected_keys = ['payment_value','payment_reference_number','payment_mode','email','organization']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []: return {'status': 'error', 'message': 'Missing keys'}, 400
-    payment_value=float(Flask_JSON["Payment_Value"])
-    if not payment_value: return {'status': 'error', 'message': 'Payment value must be a number'}, 400
+    payment_value=float(Flask_JSON["payment_value"])
+    payment_mode=Flask_JSON["payment_mode"]
+    payment_reference_number=Flask_JSON["payment_reference_number"]
+    if not float(payment_value): return {'status': 'error', 'message': 'Payment value must be a number'}, 400
     if payment_value<0: return {'status': 'error', 'message': 'Payment value cannot be negative'}, 400
     if int(len(Flask_JSON["email"]))<3 or "@" not in Flask_JSON["email"]: return {'status': 'error', 'message': 'Invalid email'}, 400
-    step1=dbops.updaters.add_user_payment(Flask_JSON["email"],payment_value,Flask_JSON["organization"])
+    if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    if 100<int(len(payment_reference_number))<3: return {'status': 'error', 'message': 'Payment reference number too short'}, 400
+    if payment_mode not in ["Cash","UPI","Card","Other"]: return {'status': 'error', 'message': 'Invalid payment mode'}, 400
+
+    step1=dbops.updaters.add_user_payment(Flask_JSON["email"],
+                                          payment_mode,
+                                          payment_reference_number,
+                                          payment_value,
+                                          Flask_JSON["organization"])
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Internal error'}, 500

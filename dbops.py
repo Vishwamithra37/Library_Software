@@ -721,10 +721,24 @@ class getters:
         return user_object
 
 class updaters:
-    def add_user_payment(user_email:str,organization:str,amount_paid:int):
+    def add_user_payment(user_email:str,payment_mode:str,payment_reference_number:str,payment_value:int,organization:str):
         dac=dab["USERS"]
-        dac.update_one({"email":user_email,"organization":organization},{"$inc":{"Library."+organization+".Total_amount_paid":amount_paid}})
-        return True
+        dac2=dab["PAYMENT_RECORDS"]
+        r1=dac.update_one({"email":user_email,"organization":organization},{"$inc":{"Library."+organization+".Total_amount_paid":payment_value}})
+        payment_dictionary={
+            "user_email":user_email,
+            "payment_mode":payment_mode,
+            "payment_reference_number":payment_reference_number,
+            "payment_value":payment_value,
+            "timestamp":str(datetime.datetime.now()),
+            "organization":organization
+        }
+        r2=dac2.insert_one(payment_dictionary)
+        if r1.modified_count:
+            return True
+        return False
+    
+
     def update_user_data(
                          organization:str,
                          user_id:str,

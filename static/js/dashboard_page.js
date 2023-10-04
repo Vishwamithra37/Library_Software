@@ -1770,7 +1770,7 @@ class dashboard_page_cards {
             e.preventDefault();
             if (penality_payment_form.reportValidity()) {
                 let data = {
-                    "username": $(User_Name_search_bar[1]).val(),
+                    "email": $(User_Name_search_bar[1]).val(),
                     "payment_value": $(payment_value_input).val(),
                     "payment_mode": $(payment_mode_dropdown).val(),
                     "payment_reference_number": $(payment_reference_number_input).val(),
@@ -1778,14 +1778,19 @@ class dashboard_page_cards {
                 }
                 let url = "/api/v1/admin/users/admin_add_user_payment";
                 let method = "POST";
+                let status;
+                status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Processing payment...", ' animate-pulse  bg-black p-2 text-yellow-500 text-sm font-bold rounded', 3000)
+                $('body').append(status);
                 let r1 = new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, JSON.stringify(data)).then(function (response) {
                     console.log(response);
-                    let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully added payment", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
+                    $(status).remove();
+                    status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully added payment", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
                     $('body').append(status);
                     $(cancel_button).click();
                 }).catch(function (error) {
                     console.log(error);
-                    let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in adding payment", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 4000)
+                    $(status).remove();
+                    status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in adding payment", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 4000)
                     $('body').append(status);
                 })
             }
