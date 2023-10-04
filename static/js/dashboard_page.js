@@ -1786,7 +1786,10 @@ class dashboard_page_cards {
                     $(status).remove();
                     status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully added payment", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
                     $('body').append(status);
-                    $(cancel_button).click();
+                    // Default the form values except the username.
+                    $(payment_value_input).val('');
+                    $(payment_mode_dropdown).val('Cash');
+                    $(payment_reference_number_input).val('');
                 }).catch(function (error) {
                     console.log(error);
                     $(status).remove();
