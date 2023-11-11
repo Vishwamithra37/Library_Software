@@ -315,30 +315,7 @@ $(document).ready(function () {
 
 $(document).ready(function () {
     // Get meta data and add it in inside the meta_data_divs.
-    let meta_data_get_url = "/api/v1/dashboard/simplemetadata/" + $('#current_user_organization').val();
-    let meta_data_get_method = "GET";
-    let meta_data_get_data = {};
-    let API_call = new GENERIC_APICALLS().GenericAPICallv2(meta_data_get_url, meta_data_get_method, meta_data_get_data).then(function (response) {
-        console.log(response);
-        let meta_data = response['data'];
-        let user_metadata = meta_data[0];
-        let book_metadata = meta_data[1];
-        let overdue_data = meta_data[2];
-        console.log(user_metadata);
-        console.log(book_metadata);
-        // statistics_total_books , statistics_total_users , statistics_total_borrowed_books , statistics_number_of_books_overdue , statistics_total_penality_due_to_late_return , statistics_total_amount_paid_by_users
-
-        $('#statistics_total_books').text(book_metadata['books_total_number_of_books_registered']);
-        $('#statistics_total_users').text(user_metadata['user_total_users']);
-        $('#statistics_total_borrowed_books').text(book_metadata['books_noofcopies_rented_currently']);
-        $('#statistics_number_of_books_overdue').text(overdue_data['total_number_of_overdue_books']).attr('data-overdue_books', JSON.stringify(overdue_data['card_data']));
-        $('#statistics_total_penality_due_to_late_return').text(overdue_data['total_penality']);
-        $('#statistics_total_amount_paid_by_users').text(user_metadata['user_total_amount_paid']);
-
-
-
-
-    });
+    new dashboard_page_API_calls().refresh_statistics();
 });
 
 
@@ -680,7 +657,6 @@ class dashboard_page_cards {
         });
         return wrapper_div;
     }
-
     rent_button_card(book_data) {
         let top_label = new GENERIC_META_CALL().Generic_div(
             "text-xl font-semibold text-violet-500 border-b-2 border-gray-200 p-2 w-full dark:text-white dark:border-b dark:border-gray-600 dark:bg-gray-700 flex flex-row justify-between",
@@ -852,7 +828,6 @@ class dashboard_page_cards {
 
         return [the_array, cancel_button];
     }
-
     return_button_card() {
         let top_label = new GENERIC_META_CALL().Generic_div(
             "text-xl font-semibold text-violet-500 border-b-2 border-gray-200 p-2 w-full dark:text-white dark:border-b dark:border-gray-600 dark:bg-gray-700 flex flex-row justify-between",
@@ -1069,6 +1044,32 @@ class dashboard_page_cards {
                 "Show Rented Copies Details"
             )
 
+            $(show_rented_copies_details_button).click(async function (e) {
+                let rented_book_data = await new dashboard_page_API_calls().get_rent_books_details(
+                    book_data['sid'],
+                    '0',
+                    '100',
+                );
+                let len_of_data = rented_book_data['data'].length;
+                let card_array_stack = []
+                let cancel_button = new GENERIC_META_CALL().Generic_button(
+                    "p-2 text-gray-400 hover:text-black font-bold text-sm rounded focus:outline-none focus:shadow-outline text-right",
+                    "Cancel"
+                );
+                card_array_stack.push(cancel_button);
+                for (let i = 0; i < len_of_data; i++) {
+                    let card = new dashboard_page_cards().rented_book_details_card(rented_book_data['data'][i]);
+                    card_array_stack.push(card);
+                }
+
+                let floating_window = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater(card_array_stack);
+                $(cancel_button).click(function () {
+                    $(floating_window).remove();
+                });
+                $('body').append(floating_window);
+
+            });
+
             $(wrapper_div).append(Book_author_label);
             $(wrapper_div).append(Book_description)
             $(wrapper_div).append(Book_tags)
@@ -1124,11 +1125,19 @@ class dashboard_page_cards {
         );
         let Fine_amount_yet_to_be_paid = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
-            "Fine amount yet to be paid: "
+            "Total Fine amount: "
         );
         let Fine_amount_yet_to_be_paid_value = new GENERIC_META_CALL().Generic_span(
             "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
             user_data["Library"][$('#current_user_organization').val()]['Total_fine_amount']
+        );
+        let Fine_amount_paid_till_date = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Fine amount paid till date: "
+        );
+        let Fine_amount_paid_till_date_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            user_data["Library"][$('#current_user_organization').val()]['Total_amount_paid']
         );
 
         $(wrapper_div).append(name_label);
@@ -1141,6 +1150,8 @@ class dashboard_page_cards {
         $(wrapper_div).append(Number_of_times_overdue_value);
         $(wrapper_div).append(Fine_amount_yet_to_be_paid);
         $(wrapper_div).append(Fine_amount_yet_to_be_paid_value);
+        $(wrapper_div).append(Fine_amount_paid_till_date);
+        $(wrapper_div).append(Fine_amount_paid_till_date_value);
         return wrapper_div;
 
     }
@@ -1815,8 +1826,101 @@ class dashboard_page_cards {
         return [wrapper_div, penality_payment_form];
 
     }
+    rented_book_details_card(rented_book_data) {
+        let wrapper_div = new GENERIC_META_CALL().Generic_div(
+            'w-full h-auto p-2 flex flex-col shadow-md border-b-2 border-gray-200 shadow-lg bg-gray-100 mb-2',
+            ''
+        )
+        let rented_user_email_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            "User email: "
+        );
+        let rented_user_email_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            rented_book_data['User_Email']
+        );
+        let rented_user_name_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            "User name: "
+        );
+        let rented_user_name_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            rented_book_data['User_Name']
+        );
+        let authorizer_email_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            "Authorizer email: "
+        );
+        let authorizer_email_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            rented_book_data['authorizer_email']
+        );
+        let rentedfor_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            "Rented for: "
+        );
+        let rentedfor_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            rented_book_data['rentedfor']
+        );
+        let unique_book_id_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            "Unique book id: "
+        );
+        let unique_book_id_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            rented_book_data['unique_book_id']
+        );
+        let rented_date_label = new GENERIC_META_CALL().Generic_label(
+            "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            "Rented date: "
+        );
+        let rented_date_value = new GENERIC_META_CALL().Generic_span(
+            "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+            rented_book_data['Book_Rented_On']
+        );
+
+
+
+        $(wrapper_div).append(rented_user_email_label);
+        $(wrapper_div).append(rented_user_email_value);
+        $(wrapper_div).append(rented_user_name_label);
+        $(wrapper_div).append(rented_user_name_value);
+        $(wrapper_div).append(authorizer_email_label);
+        $(wrapper_div).append(authorizer_email_value);
+        $(wrapper_div).append(rentedfor_label);
+        $(wrapper_div).append(rentedfor_value);
+        $(wrapper_div).append(unique_book_id_label);
+        $(wrapper_div).append(unique_book_id_value);
+        $(wrapper_div).append(rented_date_label);
+        $(wrapper_div).append(rented_date_value);
+
+        return wrapper_div;
+    }
 }
 class dashboard_page_API_calls {
+    async refresh_statistics() {
+        let meta_data_get_url = "/api/v1/dashboard/simplemetadata/" + $('#current_user_organization').val();
+        let meta_data_get_method = "GET";
+        let meta_data_get_data = {};
+        let API_call = await new GENERIC_APICALLS().GenericAPICallv2(meta_data_get_url, meta_data_get_method, meta_data_get_data).then(function (response) {
+            console.log(response);
+            let meta_data = response['data'];
+            let user_metadata = meta_data[0];
+            let book_metadata = meta_data[1];
+            let overdue_data = meta_data[2];
+            console.log(user_metadata);
+            console.log(book_metadata);
+            // statistics_total_books , statistics_total_users , statistics_total_borrowed_books , statistics_number_of_books_overdue , statistics_total_penality_due_to_late_return , statistics_total_amount_paid_by_users
+
+            $('#statistics_total_books').text(book_metadata['books_total_number_of_books_registered']);
+            $('#statistics_total_users').text(user_metadata['user_total_users']);
+            $('#statistics_total_borrowed_books').text(book_metadata['books_noofcopies_rented_currently']);
+            $('#statistics_number_of_books_overdue').text(overdue_data['total_number_of_overdue_books']).attr('data-overdue_books', JSON.stringify(overdue_data['card_data']));
+            $('#statistics_total_penality_due_to_late_return').text(overdue_data['total_penality']);
+            $('#statistics_total_amount_paid_by_users').text(user_metadata['user_total_amount_paid']);
+        });
+    }
     async get_filter_tags() {
         let url = "/api/v1/admin/get_book_tags?book_tag_parameter=tags";
         let method = "GET";
@@ -1875,6 +1979,19 @@ class dashboard_page_API_calls {
                 $(book_box).append(k1);
             }
         }); // End of API call
+    }
+    async get_rent_books_details(book_id, skip, limit) {
+        let url = "/api/v1/admin/get_rent_books_details/" + $('#current_user_organization').val();
+        let method = "POST";
+        let data = {
+            "organization": $('#current_user_organization').val(),
+            "skip": skip,
+            'book_id': book_id,
+            'limit': limit
+        };
+        let r1 = await new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, JSON.stringify(data));
+        console.log(r1);
+        return r1;
     }
 
 

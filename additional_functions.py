@@ -1,4 +1,15 @@
 import datetime
+def strip_final_space(dictionary:dict):
+    """Strips the final space from a dictionary
+
+    Keyword arguments:
+    dictionary -- the dictionary to be stripped
+    Returns:
+    dictionary -- the stripped dictionary
+    """
+    for key in dictionary:
+        dictionary[key] = dictionary[key].strip()
+    return dictionary
 def convert_all_values_to_string_for_json(dictionary: dict):
     """Converts all values in a dictionary to string for JSON
 

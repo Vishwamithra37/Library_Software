@@ -53,11 +53,12 @@ class math_operations:
                 return (time_difference_in_days-int(rent_object["rentedfor"]))*day_penality+(time_difference_in_days//30)*month_penality+(time_difference_in_days//365)*year_penality
         
 class QR_code_operations:
-    def generate_QR(stringer:str): 
-       img = qrcode.make(stringer)
-       with open('qr.png', 'wb') as f:
-           img.save(f)
-       return True
+    def generate_QR(stringer:str,multiple_QRs:list=[]): 
+        #    Generate multiple QR codes and attach them equidisatntly to the pdf. 
+              img = qrcode.make(stringer)
+              with open('qr.png', 'wb') as f:
+                img.save(f)
+              return True
 
 
 
@@ -510,6 +511,54 @@ class getters:
             return all_books_list
         return False
     
+    def get_rented_book_list(book_id:str,skip: int=0, limit: int=0,organization="",additional_filters={}):
+        """ Returns a list of books which are rented.
+        Keyword arguments:
+        book_id -- the book id (String)
+        skip -- the number of books to skip (Integer)
+        limit -- the number of books to return (Integer)
+        organization -- the organization name (String)
+        additional_filters -- the additional filters (Dictionary) (optional)
+        Returns:
+        False -- if the skip and limit are invalid (Boolean)
+        all_books_list -- if the skip and limit are valid (list of dictionaries)
+        """
+        dac = dab["UNIQUE_BOOK_IDS"]
+        v1 = dac.find({"BOOK_ID":book_id,"status":"Rented","organization":organization}).skip(skip).limit(limit)
+        return_array=[]
+        for i in v1:
+            return_data={}
+            fil2={
+                "unique_book_id":str(i["_id"]),
+                "status":"Rented",
+                "organization":organization
+            }
+            v2=dab["RENTS"].find_one(fil2,{"_id":0})
+            v3_user_info=dab["USERS"].find_one({"_id":ObjectId(v2["user_id"])},{"_id":0})
+            return_data["User_Email"]=v3_user_info["email"]
+            return_data["User_Name"]=v3_user_info["username"]
+            return_data["Book_Rented_On"]=v2["timestamp"]
+            return_data["authorizer_email"]=v2["authoriser_email"]
+            return_data["rentedfor"]=v2["rentedfor"]
+            return_data["unique_book_id"]=str(i["_id"])
+            return_data["potential_penality"]=math_operations.calculate_penality(v2)
+            return_data["time_difference"]=additional_functions.calculate_time_difference(datetime.datetime.strptime(v2["timestamp"],"%Y-%m-%d %H:%M:%S.%f"))
+            i["sid"]=str(i["_id"])
+            del i["_id"]
+            return_array.append(return_data)
+        if return_array:
+            return return_array
+        return False
+
+
+
+
+
+
+            
+        return False
+
+
     def get_book_list_special(skip: int=0, limit: int=0,returner:dict={},sorting_order=-1,search_string=0,generic=[],tags=[],organization=""):
         """ Returns a list of books
         Keyword arguments:

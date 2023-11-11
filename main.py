@@ -1,7 +1,7 @@
 import flask
 import dbops
 import config
-
+import additional_functions
 
 
 app = flask.Flask(__name__)
@@ -53,6 +53,7 @@ def admin_register_api_passwordless():
     expected_keys = ['username', 'email','id_number','phone_number','description','organization','role']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
         return {'status': 'error', 'message': 'Missing keys'}, 400
+    Flask_JSON=additional_functions.strip_final_space(Flask_JSON)
     if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
     role_permission_data=dbops.getters.config_role_permission_dictionary(Flask_JSON["organization"])
     if 20<len(Flask_JSON['username']) < 2: return {'status': 'error', 'message': 'Username too short'}, 400
@@ -287,7 +288,8 @@ def register_book():
     expected_keys = ['title', 'author', 'isbn', 'genre', 'description', 'tags', 'noofcopies', 'organization']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
         return {'status': 'error', 'message': 'Missing keys'}, 400
-    if 200<len(Flask_JSON['title']) < 2: return {'status': 'error', 'message': 'Title too short'}, 400
+    Flask_JSON=additional_functions.strip_final_space(Flask_JSON)
+    if 200<len(Flask_JSON['title']) < 2: return {'status': 'error', 'message': 'Title too short'}, 400    
     if 200<len(Flask_JSON['author']) < 2: return {'status': 'error', 'message': 'Author too short'}, 400
     if 200<len(Flask_JSON['isbn']) < 2: return {'status': 'error', 'message': 'ISBN too short'}, 400
     if 200<len(Flask_JSON['genre']) < 2: return {'status': 'error', 'message': 'Genre too short'}, 400
@@ -531,14 +533,6 @@ def delete_admin_book():
     return {"status":"error", "message": "Internal error"},500
 
 
-
-
- 
-
-
-
-
-
 #################### End Admin Endpoints ##########################
 
 @app.route('/api/v1/get_book_list', methods=['POST'])
@@ -618,7 +612,23 @@ def simple_meta_data(organization):
     return {'status': 'error', 'message': 'No data found'}, 400
 
 
-
+@app.route('/api/v1/admin/get_rent_books_details/<organization>', methods=['POST'])
+def get_rented_book_list(organization):
+    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+    if not UserDetails:
+        return {"status":"error", "message": "Invalid token"},400
+    if not "get_rented_book_list" in UserDetails["permissions"]:
+        return {"status":"error", "message": "You do not have permission to get rented book list"},400
+    JSON_DATA=flask.request.get_json()
+    if JSON_DATA.keys() != {"skip","limit","book_id","organization"}: return {"status":"error", "message": "Missing keys"},400
+    if int(len(JSON_DATA["book_id"]))<3: return {"status":"error", "message": "Book name too short"},400
+    if int(JSON_DATA["skip"])<0: return {"status":"error", "message": "Skip cannot be negative"},400
+    if int(JSON_DATA["limit"])<0: return {"status":"error", "message": "Limit cannot be negative"},400
+    if organization not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    step1=dbops.getters.get_rented_book_list(JSON_DATA["book_id"],int(JSON_DATA["skip"]),int(JSON_DATA["limit"]),organization)
+    if step1:
+        return {"status":"success", "data": step1},200
+    return {"status":"error", "message": "Internal error"},500
 
 
 
