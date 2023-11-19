@@ -632,6 +632,12 @@ def get_rented_book_list(organization):
 
 
 
+# Catch 404 and if GET, redirect to login page.
+@app.errorhandler(404)
+def page_not_found(e):
+    if flask.request.method == 'GET':
+        return flask.redirect(flask.url_for('login_page'))
+    return {'status': 'error', 'message': 'Invalid endpoint'}, 404
 
 
 if __name__ == '__main__':

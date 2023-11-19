@@ -1,0 +1,4 @@
+# Option to predate (Limited for 1 or 2 days only) -- Extra feature
+Comment on return and penality if needed -- 
+Report on daily, monthly, Yearly cumulative to excel. Records are locked till that reported date. 
+Must create eod report till eod. 

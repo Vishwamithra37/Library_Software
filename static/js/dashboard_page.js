@@ -1659,7 +1659,7 @@ class dashboard_page_cards {
                     console.log(response);
                     let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Successfully created user", 'bg-green-500 p-2 text-white text-sm font-bold rounded', 3000)
                     $('body').append(status);
-                    $(cancel_button).click();
+                    // $(cancel_button).click();
                 }).catch(function (error) {
                     console.log(error);
                     let status = new GENERIC_META_FLOATING_DIVS().bottom_bar_notification("Error in creating user, Email or username already exists or you do not have permission", 'bg-red-500 p-2 text-white text-sm font-bold rounded', 4000)
