@@ -85,7 +85,6 @@
                 {% for organization in Organizations %}
                 <option value="{{ organization }}">{{ organization }}</option>
                 {% endfor %}
-
             </select>
 
         </div>
@@ -96,17 +95,19 @@
             <!-- Single moc stuffing. -->
             <div class="w-full h-full flex flex-col overflow-y-auto">
                 <div class="w-full p-2 text-base h-11 border-b-2 border-gray-200 shadow-lg flex flex-row justify-end">
-                    <span class="mr-auto float-left">Total Books: <span id="statistics_total_books">0</span></span>
-                    <span class="mr-2 pr-2 border-r-2 border-gray-200">Users: <span
+                    <span class="statistics_total_books mr-auto float-left">Total Books: <span
+                            id="statistics_total_books">0</span></span>
+                    <span class="statistics_total_users mr-2 pr-2 border-r-2 border-gray-200">Users: <span
                             id="statistics_total_users">0</span></span>
-                    <span class="mr-2 pr-2 border-r-2 border-gray-200">borrowed📖: <span
+                    <span class="statistics_total_borrowed_books mr-2 pr-2 border-r-2 border-gray-200">borrowed📖: <span
                             id="statistics_total_borrowed_books">0</span> </span>
-                    <span class="mr-2 pr-2 border-r-2 border-gray-200">Overdue📖: <span
-                            id="statistics_number_of_books_overdue">0</span></span>
-                    <span class="mr-2 pr-2 border-r-2 border-gray-200">Penality till now: <span
-                            id="statistics_total_penality_due_to_late_return">0</span></span>
-                    <span class="mr-2 pr-2 border-r-0 border-gray-200">Amount Paid till now: <span
-                            id="statistics_total_amount_paid_by_users">0</span></span>
+                    <span class="statistics_number_of_books_overdue mr-2 pr-2 border-r-2 border-gray-200">Overdue📖:
+                        <span id="statistics_number_of_books_overdue">0</span></span>
+                    <span
+                        class="statistics_total_penality_due_to_late_return mr-2 pr-2 border-r-2 border-gray-200">Penality
+                        till now: <span id="statistics_total_penality_due_to_late_return">0</span></span>
+                    <span class="statistics_total_amount_paid_by_users mr-2 pr-2 border-r-0 border-gray-200">Amount Paid
+                        till now: <span id="statistics_total_amount_paid_by_users">0</span></span>
                 </div>
 
                 <div class="w-full p-2 h-full overflow-y-auto shadow-lg flex flex-col" id="books_box">

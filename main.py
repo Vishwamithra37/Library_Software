@@ -2,6 +2,7 @@ import flask
 import dbops
 import config
 import additional_functions
+import primary_main_decorators
 
 
 app = flask.Flask(__name__)
@@ -22,10 +23,13 @@ def login2():
 
 @app.route('/dashboard')
 def dashboard_page():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return flask.redirect(flask.url_for('login_page'))
-    if not "dashboard_page" in UserDetails["permissions"]:
+    try:
+        UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
+        if not UserDetails:
+            return flask.redirect(flask.url_for('login_page'))
+        if not "dashboard_page" in UserDetails["permissions"]:
+            return flask.redirect(flask.url_for('login_page'))
+    except:
         return flask.redirect(flask.url_for('login_page'))
     Organizations=UserDetails["organization"]
     return flask.render_template('dashboard.html',Organizations=Organizations)
@@ -42,12 +46,8 @@ def books():
 
 ####################### User Endpoints ############################
 @app.route('/api/v1/user/register_passwordless', methods=['POST'])
-def admin_register_api_passwordless():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if "admin_register_api_passwordless" not in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to register users'}, 400
+@primary_main_decorators.general_user_power_verification
+def admin_register_api_passwordless(UserDetails):
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
     expected_keys = ['username', 'email','id_number','phone_number','description','organization','role']
@@ -94,6 +94,7 @@ def admin_register_api_passwordless():
 @app.route('/api/v1/user/login', methods=['POST'])
 def login():
     Flask_JSON = flask.request.get_json()
+    print(Flask_JSON)
     ################### Validation ###################
     expected_keys = ['email', 'password']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
@@ -118,22 +119,14 @@ def login():
     return {'status': 'error', 'message': 'Invalid credentials'}, 400
 
 @app.route('/api/v1/users/logout', methods=['GET'])
-def logout_api():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'success'}, 200
-    if "logout_api" not in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to logout'}, 400
+@primary_main_decorators.general_user_power_verification
+def logout_api(UserDetails):
     flask.session.clear()
     return flask.redirect(flask.url_for('login_page'))
 
 @app.route('/api/v1/users/get_user_list', methods=['POST'])
-def get_user_list():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "get_user_list" in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to get user list'}, 400
+@primary_main_decorators.general_user_power_verification
+def get_user_list(UserDetails):
     JSON_DATA = flask.request.get_json()
     print(JSON_DATA)
     skip=JSON_DATA["skip"]
@@ -150,12 +143,8 @@ def get_user_list():
     return {'status': 'error', 'message': 'No users found'}, 400
 
 @app.route('/api/v1/users/get_specific_user_data', methods=['POST'])
-def get_specific_user_list():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "get_specific_user_list" in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to get user list'}, 400
+@primary_main_decorators.general_user_power_verification
+def get_specific_user_list(UserDetails):
     JSON_DATA = flask.request.get_json()
     print(JSON_DATA)
     if JSON_DATA.keys() != {"email","id_number","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
@@ -168,12 +157,8 @@ def get_specific_user_list():
     return {'status': 'error', 'message': 'No users found'}, 400
 
 @app.route('/api/v1/admin/books/get_book_details', methods=['POST'])
-def get_specific_book_details():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "get_specific_book_details" in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to get book details'}, 400
+@primary_main_decorators.general_user_power_verification
+def get_specific_book_details(UserDetails):
     JSON_DATA = flask.request.get_json()
     print(JSON_DATA)
     if JSON_DATA.keys() != {"book_id","organization","unique_book_id"}: return {'status': 'error', 'message': 'Missing keys'}, 400 
@@ -186,12 +171,8 @@ def get_specific_book_details():
     return {'status': 'error', 'message': 'No book found'}, 400
 
 @app.route('/api/v1/admin/books/get_unique_book_details', methods=['POST'])
-def get_specific_unique_book_details():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return flask.redirect(flask.url_for('login_page'))
-    if not "get_specific_unique_book_details" in UserDetails["permissions"]:
-        return flask.redirect(flask.url_for('login_page'))
+@primary_main_decorators.general_user_power_verification
+def get_specific_unique_book_details(UserDetails):
     JSON_DATA = flask.request.get_json()
     print(JSON_DATA)
     if JSON_DATA.keys() != {"unique_book_id","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
@@ -204,46 +185,34 @@ def get_specific_unique_book_details():
 
     
 @app.route('/api/v1/books/get_unique_book_ids', methods=['POST'])
-def get_unique_book_ids():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return flask.redirect(flask.url_for('login_page'))
-    if not "get_unique_book_ids" in UserDetails["permissions"]:
-        return flask.redirect(flask.url_for('login_page'))
+@primary_main_decorators.general_user_power_verification
+def get_unique_book_ids(UserDetails):
     JSON_DATA = flask.request.get_json()
     print(JSON_DATA)
     if JSON_DATA.keys() != {"book_id","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
     if int(len(JSON_DATA["book_id"]))<3: return {'status': 'error', 'message': 'Book ID cannot be negative'}, 400
-    if JSON_DATA["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    if JSON_DATA["organization"] not in UserDetails["o@rganization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
     step1=dbops.getters.get_unique_book_ids(JSON_DATA["book_id"],JSON_DATA["organization"])
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No book found'}, 400
+
 @app.route('/api/v1/admin/books/returns/get_unique_book_ids', methods=['POST'])
-def get_unique_book_ids_returns():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return flask.redirect(flask.url_for('login_page'))
-    if not "get_unique_book_ids_returns" in UserDetails["permissions"]:
-        return flask.redirect(flask.url_for('login_page'))
+@primary_main_decorators.general_user_power_verification
+def get_unique_book_ids_returns(UserDetails):
     JSON_DATA = flask.request.get_json()
     print(JSON_DATA)
     if JSON_DATA.keys() != {"user_id","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
     if int(len(JSON_DATA["user_id"]))<3: return {'status': 'error', 'message': 'User ID cannot be negative'}, 400
     if JSON_DATA["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
-
     step1=dbops.getters.get_unique_book_ids_returns(JSON_DATA["user_id"],JSON_DATA["organization"])
     if step1:
         return {'status': 'success', 'data': step1}, 200
     return {'status': 'error', 'message': 'No book found'}, 400
     
 @app.route('/api/v1/admin/books/edit_book', methods=['POST'])
-def admin_edit_book():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "admin_edit_book" in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to edit books'}, 400
+@primary_main_decorators.general_user_power_verification
+def admin_edit_book(UserDetails):
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
     expected_keys = ['title', 'author', 'isbn', 'description', 'tags', 'noofcopies', 'organization','book_id']
@@ -277,12 +246,8 @@ def admin_edit_book():
 
 ####################### Admin Endpoints ############################
 @app.route('/api/v1/admin/books/register', methods=['POST'])
-def register_book():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "register_book" in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to register books'}, 400
+@primary_main_decorators.general_user_power_verification
+def register_book(UserDetails):
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
     expected_keys = ['title', 'author', 'isbn', 'genre', 'description', 'tags', 'noofcopies', 'organization']
@@ -329,22 +294,18 @@ def register_book():
     return {'status': 'error', 'message': 'Internal error'}, 500
 
 @app.route('/api/v1/admin/books/rent', methods=['POST'])
-def admin_rent_book():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "admin_rent_book" in UserDetails["permissions"]:
-        print(UserDetails["permissions"])
-        return {'status': 'error', 'message': 'You do not have permission to rent books'}, 400
+@primary_main_decorators.general_user_power_verification
+def admin_rent_book(UserDetails):
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
-    expected_keys = ['user_id','unique_book_id','noofdays','organization']
+    expected_keys = ['user_id','unique_book_id','noofdays','organization','notes']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
         return {'status': 'error', 'message': 'Missing keys'}, 400
     if 200<len(Flask_JSON['unique_book_id']) < 2: return {'status': 'error', 'message': 'unique_book_id too short'}, 400
     if 200<len(Flask_JSON['user_id']) < 2: return {'status': 'error', 'message': 'User ID too short'}, 400
     if int(Flask_JSON['noofdays']) <1 : return {'status': 'error', 'message': 'At least 1 day required'}, 400
     if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    if len(Flask_JSON["notes"]) > 500 : return {'status': 'error', 'message': 'Notes are too long, greater than 500'} , 400
     ################## End Validation #################
     unique_book_details=dbops.getters.get_specific_book_details_by_unique_id(Flask_JSON["unique_book_id"],Flask_JSON["organization"])
     if unique_book_details["status"]!="Available": return {'status': 'error', 'message': 'Book rented/lost'}, 400
@@ -352,29 +313,27 @@ def admin_rent_book():
     if not unique_book_details: return {'status': 'error', 'message': 'Invalid unique book ID'}, 400
     if unique_book_details["status"]=="Rented": return {'status': 'error', 'message': 'Book already rented'}, 400
     if not common_book_details: return {'status': 'error', 'message': 'Invalid book ID'}, 400
-    step1= dbops.inserts.rent_book(common_book_details,unique_book_details,Flask_JSON["unique_book_id"], Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"],Flask_JSON["organization"])
+    print("geeos")
+    step1= dbops.inserts.rent_book(common_book_details,unique_book_details,Flask_JSON["unique_book_id"], Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"],Flask_JSON["organization"],Flask_JSON["notes"])
     if step1:
+        print("kos")
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Conditions to rent not met. Please check the number of books available or if it is already rented to the said user.'}, 500
 
 @app.route('/api/v1/admin/books/scanner/action', methods=['POST'])
-def admin_scanner_actions():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "admin_scanner_actions" in UserDetails["permissions"]:
-        print(UserDetails["permissions"])
-        return {'status': 'error', 'message': 'You do not have permission to rent books'}, 400
+@primary_main_decorators.general_user_power_verification
+def admin_scanner_actions(UserDetails):
     Flask_JSON = flask.request.get_json()
     print(Flask_JSON)
     ################### Validation ###################
-    expected_keys = ['user_id','unique_book_ids','noofdays','organization']
+    expected_keys = ['user_id','unique_book_ids','noofdays','organization','notes']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
         return {'status': 'error', 'message': 'Missing keys'}, 400
     for i in Flask_JSON["unique_book_ids"]:
         if 200<len(i) < 2: return {'status': 'error', 'message': 'unique_book_id too short'}, 400
     if 200<len(Flask_JSON['user_id']) < 2: return {'status': 'error', 'message': 'User ID too short'}, 400
     if int(Flask_JSON['noofdays']) <1 : return {'status': 'error', 'message': 'At least 1 day required'}, 400
+    if len(Flask_JSON["notes"])>500 : return {"status": 'error', 'message': 'Notes are too lengthy, greater than 500'}
     if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
     ################## End Validation #################
     for i in Flask_JSON["unique_book_ids"]:
@@ -383,24 +342,20 @@ def admin_scanner_actions():
         common_book_details=dbops.getters.get_specific_book_details(unique_book_details["BOOK_ID"],Flask_JSON["organization"])
         if not unique_book_details: return {'status': 'error', 'message': 'Invalid unique book ID'}, 400
         if unique_book_details["status"]=="Rented": 
-            step1= dbops.inserts.return_book(i, Flask_JSON["user_id"], Flask_JSON["organization"], unique_book_details)
+            step1= dbops.inserts.return_book(i, Flask_JSON["user_id"], Flask_JSON["organization"], unique_book_details,Flask_JSON["notes"])
             if step1:
                 continue
             return {'status': 'error', 'message': 'Conditions to return not met. Please make sure the ID and the One who borrowed the book match'}, 500
         if unique_book_details["status"]!="Available": return {'status': 'error', 'message': 'Book already rented'}, 400
         if not common_book_details: return {'status': 'error', 'message': 'Invalid book ID'}, 400
-        step1= dbops.inserts.rent_book(common_book_details,unique_book_details,i, Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"],Flask_JSON["organization"])
+        step1= dbops.inserts.rent_book(common_book_details,unique_book_details,i, Flask_JSON["user_id"], UserDetails,Flask_JSON["noofdays"],Flask_JSON["organization"],Flask_JSON["notes"])
         if not step1:
                 return {'status': 'error', 'message': 'Conditions to rent not met. Please check the number of books available or if it is already rented to the said user.'}, 500
     return {'status': 'success'}, 200
 
 @app.route('/api/v1/admin/get_specific_user_details_with_books_rented', methods=['GET'])
-def get_specific_user_details_with_books_rented():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "get_specific_user_details_with_books_rented" in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to get user details'}, 400
+@primary_main_decorators.general_user_power_verification
+def get_specific_user_details_with_books_rented(UserDetails):
     user_specification=flask.request.args.get('user_specification')
     if not user_specification: return {'status': 'error', 'message': 'User specification not provided'}, 400
     if not user_specification in ["username","email","id_number"]: return {'status': 'error', 'message': 'Invalid user specification'}, 400
@@ -417,12 +372,8 @@ def get_specific_user_details_with_books_rented():
 
 
 @app.route('/api/v1/admin/get_book_tags', methods=['GET'])
-def get_book_tags():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "get_book_tags" in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to get book tags'}, 400
+@primary_main_decorators.general_user_power_verification
+def get_book_tags(UserDetails):
     book_tag_parameter=flask.request.args.get('book_tag_parameter')
     if not book_tag_parameter: return {'status': 'error', 'message': 'Book tag parameter not provided'}, 400
     if not book_tag_parameter in ["genre","tags"]: return {'status': 'error', 'message': 'Invalid book tag parameter'}, 400
@@ -432,24 +383,22 @@ def get_book_tags():
     return {'status': 'success', 'options': []}, 200
 
 @app.route('/api/v1/admin/return_book', methods=['POST'])
-def admin_return_book():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "admin_return_book" in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to return books'}, 400
+@primary_main_decorators.general_user_power_verification
+def admin_return_book(UserDetails):
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
-    expected_keys = ['unique_book_id', 'user_id','organization']
+    expected_keys = ['unique_book_id', 'user_id','organization','notes']
     if list(set(expected_keys) - set(Flask_JSON.keys())) != []:
         return {'status': 'error', 'message': 'Missing keys'}, 400
     if 200<len(Flask_JSON['unique_book_id']) < 2: return {'status': 'error', 'message': 'Unique Book ID too short'}, 400
     if 200<len(Flask_JSON['user_id']) < 2: return {'status': 'error', 'message': 'User ID too short'}, 400
+    if len(Flask_JSON["notes"])>500: return {"status":"error","message":"Notes are too long on the return object"}, 400  
     if Flask_JSON["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    
     ################## End Validation #################
     unique_book_object=dbops.getters.get_specific_book_details_by_unique_id(Flask_JSON["unique_book_id"],Flask_JSON["organization"])
     if not unique_book_object: return {'status': 'error', 'message': 'Invalid unique book ID'}, 400
-    step1= dbops.inserts.return_book(Flask_JSON["unique_book_id"], Flask_JSON["user_id"], Flask_JSON["organization"], unique_book_object)
+    step1= dbops.inserts.return_book(Flask_JSON["unique_book_id"], Flask_JSON["user_id"], Flask_JSON["organization"], unique_book_object,Flask_JSON["notes"])
     if step1:
         return {'status': 'success'}, 200
     return {'status': 'error', 'message': 'Conditions to return not met. Please check the number of books available or if it is already rented to the said user.'}, 500
@@ -460,12 +409,8 @@ def normal_return_book():
 
 
 @app.route('/api/v1/admin/users/update_user', methods=['POST'])
-def admin_update_user():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error','message': 'Invalid token'}, 400
-    if not "admin_update_user" in UserDetails["permissions"]:
-        return {'status': 'error','message': 'You do not have permission to update users'}, 400
+@primary_main_decorators.general_user_power_verification
+def admin_update_user(UserDetails):
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
     expected_keys = ['update_key', 'update_value','email','organization']
@@ -485,12 +430,8 @@ def admin_update_user():
     return {'status': 'error', 'message': 'Internal error'}, 500
 
 @app.route('/api/v1/admin/users/admin_add_user_payment', methods=['POST'])
-def admin_add_user_payment():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error','message': 'Invalid token'}, 400
-    if not "admin_add_user_payment" in UserDetails["permissions"]:
-        return {'status': 'error','message': 'You do not have permission to update users'}, 400
+@primary_main_decorators.general_user_power_verification
+def admin_add_user_payment(UserDetails):
     Flask_JSON = flask.request.get_json()
     ################### Validation ###################
     print(Flask_JSON)
@@ -517,12 +458,8 @@ def admin_add_user_payment():
         
 
 @app.route('/api/v1/admin/books/delete_unique_book', methods=['POST'])
-def delete_admin_book():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {"status":"error", "message": "Invalid token"},400
-    if not "delete_admin_book" in UserDetails["permissions"]:
-        return {"status":"error", "message": "You do not have permission to delete book"},400
+@primary_main_decorators.general_user_power_verification
+def delete_admin_book(UserDetails):
     JSON_DATA=flask.request.get_json()
     if JSON_DATA.keys() != {"Unique_Book_ID","Organization"}: return {"status":"error", "message": "Missing keys"},400
     if int(len(JSON_DATA["Unique_Book_ID"]))<3: return {"status":"error", "message": "Unique Book ID too short"},400
@@ -536,13 +473,8 @@ def delete_admin_book():
 #################### End Admin Endpoints ##########################
 
 @app.route('/api/v1/get_book_list', methods=['POST'])
-def get_book_list():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "get_book_list" in UserDetails["permissions"]:
-        print(UserDetails["permissions"])
-        return {'status': 'error', 'message': 'You do not have permission to get book list'}, 400
+@primary_main_decorators.general_user_power_verification
+def get_book_list(UserDetails):
     JSON_DATA = flask.request.get_json()
     if JSON_DATA.keys() != {"skip","limit","special_filter","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
     skip=JSON_DATA["skip"]
@@ -561,13 +493,8 @@ def get_book_list():
 
 
 @app.route('/api/v1/get_book_list_special', methods=['POST'])
-def get_book_list_special_filter():
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 400
-    if not "get_book_list" in UserDetails["permissions"]:
-        print(UserDetails["permissions"])
-        return {'status': 'error', 'message': 'You do not have permission to get book list'}, 400
+@primary_main_decorators.general_user_power_verification
+def get_book_list_special_filter(UserDetails):
     JSON_DATA = flask.request.get_json()
     if JSON_DATA.keys() != {"skip","limit","special_filter","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
     skip=JSON_DATA["skip"]
@@ -599,12 +526,8 @@ def get_book_list_special_filter():
 
 
 @app.route('/api/v1/dashboard/simplemetadata/<organization>', methods=['GET'])
-def simple_meta_data(organization):
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {'status': 'error', 'message': 'Invalid token'}, 401
-    if not "simple_meta_data" in UserDetails["permissions"]:
-        return {'status': 'error', 'message': 'You do not have permission to get simple metadata'}, 401
+@primary_main_decorators.general_user_power_verification
+def simple_meta_data(organization,UserDetails):
     if organization not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 401
     step1=dbops.getters.get_simple_meta_data(organization)
     if step1:
@@ -613,12 +536,8 @@ def simple_meta_data(organization):
 
 
 @app.route('/api/v1/admin/get_rent_books_details/<organization>', methods=['POST'])
-def get_rented_book_list(organization):
-    UserDetails=dbops.getters.get_session_by_token(flask.session["Top_Secret_Token"])
-    if not UserDetails:
-        return {"status":"error", "message": "Invalid token"},400
-    if not "get_rented_book_list" in UserDetails["permissions"]:
-        return {"status":"error", "message": "You do not have permission to get rented book list"},400
+@primary_main_decorators.general_user_power_verification
+def get_rented_book_list(organization,UserDetails):
     JSON_DATA=flask.request.get_json()
     if JSON_DATA.keys() != {"skip","limit","book_id","organization"}: return {"status":"error", "message": "Missing keys"},400
     if int(len(JSON_DATA["book_id"]))<3: return {"status":"error", "message": "Book name too short"},400
@@ -630,13 +549,27 @@ def get_rented_book_list(organization):
         return {"status":"success", "data": step1},200
     return {"status":"error", "message": "Internal error"},500
 
+@app.route('/api/v1/admin/get_all_stats_of_rented_books/<organization>', methods=['POST'])
+@primary_main_decorators.general_user_power_verification
+def get_all_status_rented_book_list(organization,UserDetails):
+    JSON_DATA=flask.request.get_json()
+    if JSON_DATA.keys() != {"skip","limit","organization"}: return {"status":"error", "message": "Missing keys"},400
+    if int(JSON_DATA["skip"])<0: return {"status":"error", "message": "Skip cannot be negative"},400
+    if int(JSON_DATA["limit"])<0: return {"status":"error", "message": "Limit cannot be negative"},400
+    if organization not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    step1=dbops.getters.get_all_rented_book_list(JSON_DATA["book_id"],int(JSON_DATA["skip"]),int(JSON_DATA["limit"]),organization)
+    len_of_rented_books=len(step1)
+    if step1:
+        return {"status":"success", "data": step1, "len_of_rented_books":len_of_rented_books},200
+    return {"status":"error", "message": "Internal error"},500
+
 
 
 # Catch 404 and if GET, redirect to login page.
 @app.errorhandler(404)
 def page_not_found(e):
     if flask.request.method == 'GET':
-        return flask.redirect(flask.url_for('login_page'))
+        return flask.redirect(flask.url_for('dashboard_page'))
     return {'status': 'error', 'message': 'Invalid endpoint'}, 404
 
 

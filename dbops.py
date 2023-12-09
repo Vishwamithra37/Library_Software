@@ -63,7 +63,7 @@ class QR_code_operations:
 
 
 class inserts:
-    def return_book(unique_book_id: str, user_id: str, organization:str,Unique_book_object:dict):
+    def return_book(unique_book_id: str, user_id: str, organization:str,Unique_book_object:dict, notes:str=""):
         """Returns True if the book was returned successfully\n
         """
         dac = dab["BOOKS"]
@@ -85,6 +85,7 @@ class inserts:
         penality=math_operations.calculate_penality(rent_object)
         ### Step 3 pass the rent object to the rent records. Update the user object with the penality and the book and unique book object with the return.
         rent_object["penality"]=penality
+        rent_object["notes"]=notes
         rent_object["status"]="Returned"
         add_overdue_count=0
         if penality:
@@ -105,18 +106,8 @@ class inserts:
         dac.update_one({"_id":ObjectId(Unique_book_object["BOOK_ID"])},{"$inc":{"noofcopies_available_currently":1,"noofcopies_rented_currently":-1}})
         ###### Step4 return True
         return True
-
-        
-
-        
-
-        pass 
-
-        
-
-
-
-    def rent_book(common_book_details, unique_book_details,unique_book_id, user_id: str, authorizer_object, rentedfor: str,organizaiton):
+    
+    def rent_book(common_book_details, unique_book_details,unique_book_id, user_id: str, authorizer_object, rentedfor: str,organizaiton,notes:str=''):
         """Returns True if the book was rented successfully\n
         Keyword arguments:\n
         common_book_details -- dict\n
@@ -144,8 +135,8 @@ class inserts:
             "timestamp":str(datetime.datetime.now()),
             "status":"Rented",
             "rentedfor": rentedfor,
-            "organization":organizaiton
-
+            "organization":organizaiton,
+            "onrentnotes":notes
         }
         # ################### If the user has already rented the book ###################
         if dac2.find_one({"unique_book_id":unique_book_id,"user_id":user_id,"status":"Rented"}):
@@ -343,19 +334,20 @@ class getters:
                 user_details=getters.get_user_data_by_id(i["user_id"],organization)
                 overdue_data_2["total_penality"]=math_operations.calculate_penality(i)+overdue_data_2["penality"]
                 append_card={}
-                append_card["user_name"]=user_details["username"]
-                append_card["email"]=user_details["email"]
+                append_card["User_Name"]=user_details["username"]
+                append_card["User_Email"]=user_details["email"]
                 append_card["id_number"]=user_details["id_number"]
                 append_card["role"]=user_details["Role"]
+                append_card["authorizer_email"]=i["authoriser_email"]
                 append_card["book_name"]=unique_book_details["title"]
                 append_card["author"]=unique_book_details["author"]
                 append_card["book_tags"]=unique_book_details["tags"]
-                append_card["rented_for"]=i["rentedfor"]
-                append_card["rented_on"]=i["timestamp"]
-                append_card["overduefor"]=i["time_difference"]
+                append_card["unique_book_id"]=i["unique_book_id"]
+                append_card["rentedfor"]=i["rentedfor"]
+                append_card["Book_Rented_On"]=i["timestamp"]
+                append_card["time_difference"]=i["time_difference"]
                 append_card["penality"]=math_operations.calculate_penality(i)
                 overdue_data_2["card_data"].append(append_card)
-                
         overdue_data_2["total_number_of_overdue_books"]=len(overdue_data_2["card_data"])
         Book_data=list(Book_data)
 
@@ -551,12 +543,44 @@ class getters:
         return False
 
 
-
-
-
-
-            
+    def get_all_rented_book_list(skip: int=0, limit: int=0,organization="",additional_filters={}):
+        """ Returns the list of all books which are rented.
+        Keyword arguments:
+        skip -- the number of books to skip (Integer)
+        limit -- the number of books to return (Integer)
+        organization -- the organization name (String)
+        additional_filters -- the additional filters (Dictionary) (optional)
+        Returns:
+        False -- if the skip and limit are invalid (Boolean)
+        all_books_list -- if the skip and limit are valid (list of dictionaries)
+        """
+        dac = dab["UNIQUE_BOOK_IDS"]
+        v1 = dac.find({"status":"Rented","organization":organization}).skip(skip).limit(limit)
+        return_array=[]
+        for i in v1:
+            return_data={}
+            fil2={
+                "unique_book_id":str(i["_id"]),
+                "status":"Rented",
+                "organization":organization
+            }
+            v2=dab["RENTS"].find_one(fil2,{"_id":0})
+            v3_user_info=dab["USERS"].find_one({"_id":ObjectId(v2["user_id"])},{"_id":0})
+            return_data["User_Email"]=v3_user_info["email"]
+            return_data["User_Name"]=v3_user_info["username"]
+            return_data["Book_Rented_On"]=v2["timestamp"]
+            return_data["authorizer_email"]=v2["authoriser_email"]
+            return_data["rentedfor"]=v2["rentedfor"]
+            return_data["unique_book_id"]=str(i["_id"])
+            return_data["potential_penality"]=math_operations.calculate_penality(v2)
+            return_data["time_difference"]=additional_functions.calculate_time_difference(datetime.datetime.strptime(v2["timestamp"],"%Y-%m-%d %H:%M:%S.%f"))
+            i["sid"]=str(i["_id"])
+            del i["_id"]
+            return_array.append(return_data)
+        if return_array:
+            return return_array
         return False
+
 
 
     def get_book_list_special(skip: int=0, limit: int=0,returner:dict={},sorting_order=-1,search_string=0,generic=[],tags=[],organization=""):

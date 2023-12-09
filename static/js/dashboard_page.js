@@ -580,7 +580,6 @@ class dashboard_page_cards {
             return wrapper_div;
         }
     }
-
     book_row_card(book_data) {
         let wrapper_div = new GENERIC_META_CALL().Generic_div(
             "w-full flex flex-col shadow-md border-b-2 border-gray-200 mb-2 shadow-lg",
@@ -770,11 +769,23 @@ class dashboard_page_cards {
             "Cancel"
         )
         $(top_label).append(cancel_button);
+        let notes_label = new GENERIC_META_CALL().Generic_label(
+            "w-full text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Notes: "
+        );
+        let notes_input = new GENERIC_META_CALL().Generic_textarea(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Enter notes (optional)",
+            ""
+        )
+        $(notes_input).attr('maxlength', '500')
 
         $(the_renting_form).append(User_Name_label);
         $(the_renting_form).append(User_Name_search_bar[0]);
         $(the_renting_form).append(Number_of_days_label);
         $(the_renting_form).append(Number_of_days_input);
+        $(the_renting_form).append(notes_label);
+        $(the_renting_form).append(notes_input);
         $(the_renting_form).append(organization_dropdown);
         let the_array = [
             top_label,
@@ -802,7 +813,7 @@ class dashboard_page_cards {
                 let form_data = {
                     "user_id": user_data['sid'],
                     "unique_book_id": $(unique_book_id_dropdown).val(),
-                    // "user_email": $(User_Name_search_bar[1]).val(),
+                    "notes": $(notes_input).val(),
                     "noofdays": $(Number_of_days_input).val(),
                     "organization": $(organization_dropdown).val()
                 }
@@ -931,6 +942,19 @@ class dashboard_page_cards {
             }
         });
 
+        let notes_label = new GENERIC_META_CALL().Generic_label(
+            "w-full text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Notes: "
+        );
+        let notes_input = new GENERIC_META_CALL().Generic_textarea(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Enter notes (optional)",
+            ""
+        )
+        $(notes_input).attr('maxlength', '500')
+
+
+
 
         let cancel_button = new GENERIC_META_CALL().Generic_button(
             "p-2 text-gray-400 hover:text-black font-bold text-sm rounded focus:outline-none focus:shadow-outline",
@@ -939,6 +963,9 @@ class dashboard_page_cards {
         $(top_label).append(cancel_button);
         $(the_renting_form).append(User_Name_label);
         $(the_renting_form).append(User_Name_search_bar[0]);
+        $(the_renting_form).append(notes_label);
+        $(the_renting_form).append(notes_input);
+
 
         $(the_renting_form).append(organization_dropdown);
         let the_array = [
@@ -952,6 +979,7 @@ class dashboard_page_cards {
             extra_info_div,
             extra_info_div2
         ]
+
 
         $(return_button).click(function () {
             console.log("Rent button clicked");
@@ -967,7 +995,8 @@ class dashboard_page_cards {
                 let form_data = {
                     "user_id": user_data['sid'],
                     "unique_book_id": $(unique_book_id_dropdown).val(),
-                    "organization": $(organization_dropdown).val()
+                    "organization": $(organization_dropdown).val(),
+                    "notes": $(notes_input).val()
                 }
                 console.log(form_data);
                 let url = "/api/v1/admin/return_book";
@@ -1259,6 +1288,16 @@ class dashboard_page_cards {
             "Number of days",
             7
         )
+        let notes_label = new GENERIC_META_CALL().Generic_label(
+            "w-full text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700",
+            "Notes: "
+        );
+        let notes_input = new GENERIC_META_CALL().Generic_textarea(
+            "w-full shadow appearance-none w-full p-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 outline-none",
+            "Enter notes (optional)",
+            ""
+        )
+        $(notes_input).attr('maxlength', '500')
         number_of_days_to_be_rented_input.setAttribute('type', 'number');
         number_of_days_to_be_rented_input.setAttribute('min', '1');
         number_of_days_to_be_rented_input.setAttribute('name', 'noofdays');
@@ -1274,6 +1313,8 @@ class dashboard_page_cards {
 
         $(wrapper_div).append(number_of_days_to_be_rented_label);
         $(wrapper_div).append(number_of_days_to_be_rented_input);
+        $(wrapper_div).append(notes_label);
+        $(wrapper_div).append(notes_input);
         $(wrapper_div).append(rent_button);
         // $(wrapper_div).append(return_button);
 
@@ -1831,6 +1872,14 @@ class dashboard_page_cards {
             'w-full h-auto p-2 flex flex-col shadow-md border-b-2 border-gray-200 shadow-lg bg-gray-100 mb-2',
             ''
         )
+        // let book_label = new GENERIC_META_CALL().Generic_label(
+        //     "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+        //     "Book Name: "
+        // );
+        // let book_label_value = new GENERIC_META_CALL().Generic_span(
+        //     "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
+        //     rented_book_data['BOOK_Name']
+        // );
         let rented_user_email_label = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
             "User email: "
@@ -1919,6 +1968,32 @@ class dashboard_page_API_calls {
             $('#statistics_number_of_books_overdue').text(overdue_data['total_number_of_overdue_books']).attr('data-overdue_books', JSON.stringify(overdue_data['card_data']));
             $('#statistics_total_penality_due_to_late_return').text(overdue_data['total_penality']);
             $('#statistics_total_amount_paid_by_users').text(user_metadata['user_total_amount_paid']);
+
+            $('#statistics_number_of_books_overdue').add('.statistics_number_of_books_overdue').click(function (e) {
+
+                let rented_book_data = overdue_data["card_data"]
+                let len_of_data = rented_book_data.length;
+                let card_array_stack = []
+                let cancel_button = new GENERIC_META_CALL().Generic_button(
+                    "p-2 text-gray-400 hover:text-black font-bold text-sm rounded focus:outline-none focus:shadow-outline text-right",
+                    "Cancel"
+                );
+                card_array_stack.push(cancel_button);
+                for (let i = 0; i < len_of_data; i++) {
+                    let card = new dashboard_page_cards().rented_book_details_card(rented_book_data[i]);
+                    card_array_stack.push(card);
+                }
+
+                let floating_window = new GENERIC_META_FLOATING_DIVS().multi_col_stack_floater(card_array_stack);
+                $(cancel_button).click(function () {
+                    $(floating_window).remove();
+                });
+                $('body').append(floating_window);
+
+            });
+
+
+
         });
     }
     async get_filter_tags() {
@@ -1955,7 +2030,6 @@ class dashboard_page_API_calls {
             }
         }); // End of API call
     }
-
     refresh_book_list_special(limit, skip, special_filter) {
         let url = "/api/v1/get_book_list_special";
         let method = "POST";
@@ -1994,6 +2068,18 @@ class dashboard_page_API_calls {
         return r1;
     }
 
+    async get_all_statistics_of_rented_books() {
+        let url = "/api/v1/admin/get_all_status_rented_book_list/" + $('#current_user_organization').val();
+        let method = "POST";
+        let data = {
+            "organization": $('#current_user_organization').val(),
+            "skip": skip,
+            'limit': limit
+        };
+        let r1 = await new GENERIC_APICALLS().GenericAPIJSON_CALL(url, method, JSON.stringify(data));
+        console.log(r1);
+        return r1;
+    }
 
 
 
