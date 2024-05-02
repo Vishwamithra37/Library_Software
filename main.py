@@ -191,7 +191,7 @@ def get_unique_book_ids(UserDetails):
     print(JSON_DATA)
     if JSON_DATA.keys() != {"book_id","organization"}: return {'status': 'error', 'message': 'Missing keys'}, 400
     if int(len(JSON_DATA["book_id"]))<3: return {'status': 'error', 'message': 'Book ID cannot be negative'}, 400
-    if JSON_DATA["organization"] not in UserDetails["o@rganization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
+    if JSON_DATA["organization"] not in UserDetails["organization"]: return {'status': 'error', 'message': 'Invalid organization'}, 400
     step1=dbops.getters.get_unique_book_ids(JSON_DATA["book_id"],JSON_DATA["organization"])
     if step1:
         return {'status': 'success', 'data': step1}, 200

@@ -25,7 +25,6 @@ $(document).ready(function () {
 
 $(document).ready(function () {
     new dashboard_page_API_calls().refresh_book_list(10, 0, "all");
-
     // Filters Secction
     let filter_elem = $('#filter_tags');
     let k1 = new dashboard_page_API_calls().get_filter_tags().then(function (response) {
@@ -638,14 +637,10 @@ class dashboard_page_cards {
             });
             $('body').append(delete_card[0]);
         });
-
-
         let show_details_button = new GENERIC_META_CALL().Generic_div(
             "w-full text-right bg-gray-200 font-semibold  hover:text-green-600 text-green-500 cursor-pointer pl-2 pr-2 rounded-b-lg",
             "Show Details"
         )
-
-
         $(primary_card_div).append(book_title);
         $(primary_card_div).append(buttons_wrapper_div);
         $(wrapper_div).append(primary_card_div);
@@ -1872,14 +1867,7 @@ class dashboard_page_cards {
             'w-full h-auto p-2 flex flex-col shadow-md border-b-2 border-gray-200 shadow-lg bg-gray-100 mb-2',
             ''
         )
-        // let book_label = new GENERIC_META_CALL().Generic_label(
-        //     "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
-        //     "Book Name: "
-        // );
-        // let book_label_value = new GENERIC_META_CALL().Generic_span(
-        //     "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
-        //     rented_book_data['BOOK_Name']
-        // );
+
         let rented_user_email_label = new GENERIC_META_CALL().Generic_label(
             "block text-gray-700 text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
             "User email: "
@@ -1928,8 +1916,6 @@ class dashboard_page_cards {
             "block text-green-500 font-bold text-sm font-bold mt-2 dark:text-white dark:border-gray-600 dark:bg-gray-700 text-left",
             rented_book_data['Book_Rented_On']
         );
-
-
 
         $(wrapper_div).append(rented_user_email_label);
         $(wrapper_div).append(rented_user_email_value);
