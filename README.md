@@ -7,7 +7,7 @@ This is a special client request for library software
 1. Use a venv with the requirements.txt
 2. Use the command `python3 main.py` to run the program
 3. Edit config.py and change the database path to your database path.
-4. Run DBINIT.py to create the database
+4. Run DBINIT.py to create the database (Use tester_notebook.ipynb and run the cells.) Email is tester@gmail.com and password is testpassword
 5. All the best.
 
 
